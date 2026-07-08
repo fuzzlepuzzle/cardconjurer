@@ -46,8 +46,107 @@ function getStandardHeight() {
 	return 2814;
 }
 
+// Trackers for bulk download
+window.ImageLoadTracker = {
+    promises: [],
+    isTracking: false,
+
+    // Call this to start a new tracking session.
+    start: function() {
+        this.promises = [];
+        this.isTracking = true;
+    },
+
+    // Call this to end the session.
+    stop: function() {
+        this.isTracking = false;
+        this.promises = [];
+    },
+
+    /**
+     * Creates a promise that resolves when the image from 'src' is loaded.
+     * Adds this promise to the tracking array.
+     * @param {string} src - The source URL of the image to load.
+     */
+    track: function(src) {
+        // Only track if a session is active and the src is valid.
+        if (!this.isTracking || !src || src.includes('blank.png')) {
+            return;
+        }
+
+        const promise = new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            // Resolve the promise on load.
+            img.onload = () => resolve(img);
+            // Also resolve on error to prevent Promise.all from failing on a single broken image.
+            // The app's own error handlers will manage displaying a blank image.
+            img.onerror = () => {
+                console.warn(`Could not load tracked image: ${src}`);
+                resolve(null); 
+            };
+            img.src = src;
+        });
+        this.promises.push(promise);
+    },
+
+    /**
+     * Returns a single promise that resolves when all tracked images have finished loading.
+     */
+    waitForAll: function() {
+        return Promise.all(this.promises);
+    }
+};
+window.FontLoadTracker = {
+    fonts: new Set(),
+    isTracking: false,
+
+    // Call this to start a new font tracking session.
+    start: function() {
+        this.fonts.clear();
+        this.isTracking = true;
+    },
+
+    // Call this to end the session.
+    stop: function() {
+        this.isTracking = false;
+        this.fonts.clear();
+    },
+
+    /**
+     * Adds a font family to the set of required fonts for the current card.
+     * @param {string} fontFamily - The name of the font family to track (e.g., 'belerenbsc').
+     */
+    track: function(fontFamily) {
+        if (this.isTracking && fontFamily) {
+            this.fonts.add(fontFamily);
+        }
+    },
+
+    /**
+     * Uses the document.fonts API to wait for all tracked fonts to be loaded and ready.
+     * @returns {Promise} A promise that resolves when all fonts in the set are available.
+     */
+    waitForAll: function() {
+        if (this.fonts.size === 0) {
+            return Promise.resolve(); // No fonts to wait for.
+        }
+
+        const fontPromises = [];
+        // The document.fonts.load() method checks if a font is ready for use.
+        // It requires a size (e.g., '12px'), but the family name is the crucial part.
+        for (const font of this.fonts) {
+            fontPromises.push(document.fonts.load(`12px ${font}`));
+        }
+
+        console.log('Waiting for fonts to load:', Array.from(this.fonts));
+        return Promise.all(fontPromises);
+    }
+};
+
 //card object
 var card = {width:getStandardWidth(), height:getStandardHeight(), marginX:0, marginY:0, frames:[], artSource:fixUri('/img/blank.png'), artX:0, artY:0, artZoom:1, artRotate:0, setSymbolSource:fixUri('/img/blank.png'), setSymbolX:0, setSymbolY:0, setSymbolZoom:1, watermarkSource:fixUri('/img/blank.png'), watermarkX:0, watermarkY:0, watermarkZoom:1, watermarkLeft:'none', watermarkRight:'none', watermarkOpacity:0.4, version:'', manaSymbols:[]};
+window.cardDrawingPromiseResolver = null;
 //core images/masks
 const black = new Image(); black.crossOrigin = 'anonymous'; black.src = fixUri('/img/black.png');
 const blank = new Image(); blank.crossOrigin = 'anonymous'; blank.src = fixUri('/img/blank.png');
@@ -762,9 +861,6 @@ function setAutoframeNyx(value) {
 }
 
 var autoFramePack;
-function autoFrame() {
-	var frame = document.querySelector('#autoFrame').value;
-	if (frame == 'false') { autoFramePack = null; return; }
 
 	var colors = [];
 	if (card.text.type.text.toLowerCase().includes('land')) {
@@ -3088,13 +3184,11 @@ function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = fal
 
 	var isVehicle = letter == 'V';
 
-=======
 function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = false, style, universesBeyond = false) {
 	letter = letter.toUpperCase();
 
 	var isVehicle = letter == 'V';
 
->>>>>>> Stashed changes
 	if (letter == 'V') {
 		letter = 'A';
 	}
@@ -4097,6 +4191,8 @@ function makeSeventhEditionFrameByLetter(letter, mask = false, maskToRightHalf =
 
 	return frame;
 }
+=======
+>>>>>>> upstream
 async function addFrame(additionalMasks = [], loadingFrame = false) {
 	var frameToAdd = JSON.parse(JSON.stringify(availableFrames[selectedFrameIndex]));
 	var maskThumbnail = true;
@@ -4112,9 +4208,22 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 		}
 		additionalMasks.forEach(item => {
 			if (item.name in replacementMasks) {
-				item.src = replacementMasks[item.name];
+				const replacement = replacementMasks[item.name];
+				if (typeof replacement === 'string') {
+					// String value: just replace the src
+					item.src = replacement;
+				} else if (typeof replacement === 'object') {
+					// Object value: merge properties
+					Object.assign(item, replacement);
+				}
 			}
 			frameToAdd.masks.push(item);
+		});
+		// Check if any mask has preserveAlpha and transfer it to the frame
+		frameToAdd.masks.forEach(mask => {
+			if (mask.preserveAlpha) {
+				frameToAdd.preserveAlpha = true;
+			}
 		});
 		// Likewise, we now add any complementary frames
 		if ('complementary' in frameToAdd && frameToAdd.masks.length == 0) {
@@ -4145,6 +4254,7 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 		item.image.crossOrigin = 'anonymous';
 		item.image.src = blank.src;
 		item.image.onload = drawFrames;
+		ImageLoadTracker.track(fixUri(item.src));
 		item.image.src = fixUri(item.src);
 	});
 	frameToAdd.image = new Image();
@@ -4154,6 +4264,7 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 	if ('stretch' in frameToAdd) {
 		stretchSVG(frameToAdd);
 	} else {
+		ImageLoadTracker.track(fixUri(frameToAdd.src));
 		frameToAdd.image.src = fixUri(frameToAdd.src);
 	}
 	if (!loadingFrame) {
@@ -4478,6 +4589,164 @@ async function drawText() {
 	}
 }
 var justifyWidth = 90;
+let manaSymbolsToRender = [];
+//Split CJK characters individually so Japanese/Chinese text can wrap per-character
+function splitCJKCharacters(splitText) {
+	var result = [];
+	for (var i = 0; i < splitText.length; i++) {
+		var segment = splitText[i];
+		if (segment.includes('{') || segment === ' ') {
+			result.push(segment);
+		} else if (/[\u3000-\u9FFF\uF900-\uFAFF]/.test(segment)) {
+			for (var j = 0; j < segment.length; j++) {
+				result.push(segment[j]);
+			}
+		} else {
+			result.push(segment);
+		}
+	}
+	return result;
+}
+//Pre-scan ruby codes to find the smallest annotation size needed so all ruby text is consistent
+function prescanRubySize(splitText, textObject, ctx, textSize, fontStyle, font, fontExt) {
+	var annSize = textObject.vertical ? textSize * 0.35 : textSize * 0.5;
+	for (var i = 0; i < splitText.length; i++) {
+		var word = splitText[i];
+		if (!word || !word.toLowerCase().startsWith('{ruby:')) { continue; }
+		var parts = word.replace(/[{}]/g, '').split(':');
+		var base = parts[1] || '';
+		var annotation = parts[2] || '';
+		if (base.length == 0) { continue; }
+		if (textObject.vertical) {
+			var charsPerBase = Math.ceil(annotation.length / base.length);
+			for (var j = 0; j < base.length; j++) {
+				var charCount = Math.min(charsPerBase, annotation.length - j * charsPerBase);
+				if (charCount > 0) {
+					annSize = Math.min(annSize, textSize / charCount);
+				}
+			}
+		} else {
+			var baseWidth = ctx.measureText(base).width;
+			ctx.font = fontStyle + annSize + 'px ' + font + fontExt;
+			var annWidth = ctx.measureText(annotation).width;
+			if (annWidth > baseWidth && baseWidth > 0) {
+				annSize = Math.min(annSize, annSize * (baseWidth / annWidth));
+			}
+			ctx.font = fontStyle + textSize + 'px ' + font + fontExt;
+		}
+	}
+	return annSize;
+}
+//Draw ruby text (base with annotation above or to the right)
+function drawRubyText(word, textObject, ctx, paragraphCtx, lineCanvas, annSize, state, opts) {
+	var parts = word.replace(/[{}]/g, '').split(':');
+	var base = parts[1] || '';
+	var annotation = parts[2] || '';
+	var savedFont = ctx.font;
+	if (textObject.vertical) {
+		drawRubyVertical(base, annotation, ctx, paragraphCtx, lineCanvas, annSize, state, opts, savedFont);
+	} else {
+		drawRubyHorizontal(base, annotation, ctx, paragraphCtx, lineCanvas, annSize, state, opts, savedFont);
+	}
+}
+//Vertical ruby: base chars stacked top-to-bottom, annotation to the right
+function drawRubyVertical(base, annotation, ctx, paragraphCtx, lineCanvas, annSize, state, opts, savedFont) {
+	var charsPerBase = Math.ceil(annotation.length / base.length);
+	for (var i = 0; i < base.length; i++) {
+		var baseChar = base[i];
+		var annStart = i * charsPerBase;
+		var annChars = annotation.substring(annStart, Math.min(annStart + charsPerBase, annotation.length));
+		//Flush line before drawing next base character
+		if (i > 0) {
+			var hAdj = 0;
+			if (opts.textAlign == 'center') { hAdj = (opts.textWidth - state.currentX) / 2; }
+			else if (opts.textAlign == 'right') { hAdj = opts.textWidth - state.currentX; }
+			if (state.currentX > state.widestLineWidth) { state.widestLineWidth = state.currentX; }
+			paragraphCtx.drawImage(lineCanvas, hAdj, state.currentY);
+			state.lineY = 0;
+			ctx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
+			state.currentX = opts.startingCurrentX;
+			state.currentY += opts.textSize + state.newLineSpacing;
+			state.newLineSpacing = (textObject.lineSpacing || 0) * opts.textSize;
+		}
+		//Draw base character
+		var baseCharWidth = ctx.measureText(baseChar).width;
+		var baseY = opts.canvasMargin + opts.textSize * opts.textFontHeightRatio + state.lineY;
+		if (opts.textOutlineWidth >= 1) { ctx.strokeText(baseChar, state.currentX + opts.canvasMargin, baseY); }
+		ctx.fillText(baseChar, state.currentX + opts.canvasMargin, baseY);
+		//Draw annotation chars to the right, centered vertically
+		if (annChars.length > 0) {
+			ctx.font = opts.textFontStyle + annSize + 'px ' + opts.textFont + opts.textFontExtension;
+			var annX = state.currentX + opts.canvasMargin + baseCharWidth;
+			var totalAnnH = annChars.length * annSize;
+			var baseTopY = opts.canvasMargin + state.lineY;
+			var annStartY = baseTopY + (opts.textSize - totalAnnH) / 2 + annSize * opts.textFontHeightRatio - opts.textSize * 0.08;
+			for (var j = 0; j < annChars.length; j++) {
+				var charY = annStartY + j * annSize;
+				if (opts.textOutlineWidth >= 1) { ctx.strokeText(annChars[j], annX, charY); }
+				ctx.fillText(annChars[j], annX, charY);
+			}
+			ctx.font = savedFont;
+		}
+		state.currentX += baseCharWidth;
+	}
+}
+//Horizontal ruby: annotation drawn above base text, evenly distributed
+function drawRubyHorizontal(base, annotation, ctx, paragraphCtx, lineCanvas, annSize, state, opts, savedFont) {
+	var baseWidth = ctx.measureText(base).width;
+	ctx.font = opts.textFontStyle + annSize + 'px ' + opts.textFont + opts.textFontExtension;
+	var annWidth = ctx.measureText(annotation).width;
+	ctx.font = savedFont;
+	var totalWidth = Math.max(baseWidth, annWidth);
+	//Wrap to new line if needed
+	if (totalWidth + state.currentX >= opts.textWidth && opts.textArcRadius == 0 && !opts.textOneLine) {
+		var hAdj = 0;
+		if (opts.textAlign == 'center') { hAdj = (opts.textWidth - state.currentX) / 2; }
+		else if (opts.textAlign == 'right') { hAdj = opts.textWidth - state.currentX; }
+		if (state.currentX > state.widestLineWidth) { state.widestLineWidth = state.currentX; }
+		paragraphCtx.drawImage(lineCanvas, hAdj, state.currentY);
+		state.lineY = 0;
+		ctx.clearRect(0, 0, lineCanvas.width, lineCanvas.height);
+		state.currentX = opts.startingCurrentX;
+		state.currentY += opts.textSize + state.newLineSpacing;
+		state.newLineSpacing = (textObject.lineSpacing || 0) * opts.textSize;
+	}
+	var baseOffsetX = (totalWidth - baseWidth) / 2;
+	var baseY = opts.canvasMargin + opts.textSize * opts.textFontHeightRatio + state.lineY;
+	//Position annotation using font metrics for zero-gap placement
+	var baseMetrics = ctx.measureText(base);
+	var baseFontAscent = baseMetrics.fontBoundingBoxAscent || opts.textSize * opts.textFontHeightRatio;
+	ctx.font = opts.textFontStyle + annSize + 'px ' + opts.textFont + opts.textFontExtension;
+	var annMetrics = ctx.measureText(annotation);
+	var annFontDescent = annMetrics.fontBoundingBoxDescent || annSize * 0.1;
+	var annY = baseY - baseFontAscent - annFontDescent;
+	//Distribute annotation chars evenly when base is wider
+	if (annotation.length > 1 && baseWidth > annWidth) {
+		var charWidths = [];
+		var totalCharWidth = 0;
+		for (var i = 0; i < annotation.length; i++) {
+			var w = ctx.measureText(annotation[i]).width;
+			charWidths.push(w);
+			totalCharWidth += w;
+		}
+		var spacing = (baseWidth - totalCharWidth) / (annotation.length + 1);
+		var drawX = state.currentX + opts.canvasMargin + baseOffsetX + spacing;
+		for (var i = 0; i < annotation.length; i++) {
+			if (opts.textOutlineWidth >= 1) { ctx.strokeText(annotation[i], drawX, annY); }
+			ctx.fillText(annotation[i], drawX, annY);
+			drawX += charWidths[i] + spacing;
+		}
+	} else {
+		var annOffsetX = (totalWidth - annWidth) / 2;
+		if (opts.textOutlineWidth >= 1) { ctx.strokeText(annotation, state.currentX + opts.canvasMargin + annOffsetX, annY); }
+		ctx.fillText(annotation, state.currentX + opts.canvasMargin + annOffsetX, annY);
+	}
+	ctx.font = savedFont;
+	//Draw base text
+	if (opts.textOutlineWidth >= 1) { ctx.strokeText(base, state.currentX + opts.canvasMargin + baseOffsetX, baseY); }
+	ctx.fillText(base, state.currentX + opts.canvasMargin + baseOffsetX, baseY);
+	state.currentX += totalWidth;
+}
 function writeText(textObject, targetContext) {
 	manaSymbolsToRender = [];
 	//Most bits of info about text loaded, with defaults when needed
@@ -4567,6 +4836,7 @@ function writeText(textObject, targetContext) {
 	splitText = splitText.replace(/{/g, splitString + '{').replace(/}/g, '}' + splitString).replace(/ /g, splitString + ' ' + splitString).split(splitString);
 
 	splitText = splitText.filter(item => item);
+	splitText = splitCJKCharacters(splitText);
 	if (textObject.manaCost) {
 		splitText = splitText.filter(item => item != ' ');
 	}
@@ -4672,6 +4942,7 @@ function writeText(textObject, targetContext) {
 		    }
 		}
 		var textFont = textObject.font || 'mplantin';
+		FontLoadTracker.track(textFont);
 		var textAlign = textObject.align || 'left';
 		var textJustify = textObject.justify || 'left';
 		var textShadowColor = textObject.shadow || 'black';
@@ -4733,6 +5004,9 @@ function writeText(textObject, targetContext) {
 			textOutlineWidth = 0;
 		}
 		lineContext.lineWidth = textOutlineWidth;
+		lineContext.lineCap = textLineCap;
+		lineContext.lineJoin = textLineJoin;
+		var rubyGlobalAnnSize = prescanRubySize(splitText, textObject, lineContext, textSize, textFontStyle, textFont, textFontExtension);
 		//Begin looping through words/codes
 		innerloop: for (word of splitText) {
 			var wordToWrite = word;
@@ -4804,6 +5078,16 @@ function writeText(textObject, targetContext) {
 					textJustify = 'center';
 				} else if (possibleCode == 'justify-right') {
 					textJustify = 'right';
+				} else if (possibleCode.startsWith('ruby:')) {
+					var rubyState = {currentX:currentX, currentY:currentY, lineY:lineY, widestLineWidth:widestLineWidth, newLineSpacing:newLineSpacing};
+					drawRubyText(word, textObject, lineContext, paragraphContext, lineCanvas, rubyGlobalAnnSize, rubyState, {
+						textSize:textSize, textFontStyle:textFontStyle, textFont:textFont, textFontExtension:textFontExtension,
+						textFontHeightRatio:textFontHeightRatio, textAlign:textAlign, textWidth:textWidth, textArcRadius:textArcRadius,
+						textOneLine:textOneLine, textOutlineWidth:textOutlineWidth, canvasMargin:canvasMargin, startingCurrentX:startingCurrentX
+					});
+					currentX = rubyState.currentX; currentY = rubyState.currentY; lineY = rubyState.lineY;
+					widestLineWidth = rubyState.widestLineWidth; newLineSpacing = rubyState.newLineSpacing;
+					wordToWrite = null;
 				} else if (possibleCode.includes('conditionalcolor')) {
 				    const codeParams = possibleCode.split(":");
 				    const tagParts = codeParams[1].split(",");
@@ -4889,6 +5173,7 @@ function writeText(textObject, targetContext) {
 						textFont = savedFont;
 						wordToWrite = word;
 					}
+					FontLoadTracker.track(textFont);
 					textFontExtension = '';
 					textFontStyle = '';
 					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
@@ -5294,7 +5579,17 @@ function writeText(textObject, targetContext) {
 					maxSpaceSize: 6,
 					minSpaceSize: 0
 				};
-
+				//Rotate katakana prolonged sound mark (ー) 90° CW in vertical text
+				var verticalRotateChar = textObject.vertical && wordToWrite === '\u30FC';
+				if (verticalRotateChar) {
+					var charWidth = lineContext.measureText(wordToWrite).width;
+					var centerX = currentX + canvasMargin + charWidth / 2;
+					var centerY = canvasMargin + textSize * textFontHeightRatio + lineY - textSize * 0.3;
+					lineContext.save();
+					lineContext.translate(centerX, centerY);
+					lineContext.rotate(Math.PI / 2);
+					lineContext.translate(-centerX, -centerY);
+				}
 				if (textArcRadius > 0) {
 					lineContext.fillTextArc(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, textArcRadius, textArcStart, currentX, textOutlineWidth);
 				} else {
@@ -5310,6 +5605,9 @@ function writeText(textObject, targetContext) {
 					} else {
 						lineContext.fillText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY);
 					}
+				}
+				if (verticalRotateChar) {
+					lineContext.restore();
 				}
 
 				if (fillJustify) {
@@ -5718,6 +6016,7 @@ function artStopDrag(e) {
 }
 //SET SYMBOL TAB
 function uploadSetSymbol(imageSource, otherParams) {
+	ImageLoadTracker.track(imageSource);
 	setSymbol.src = imageSource;
 	if (otherParams && otherParams == 'resetSetSymbol') {
 		setSymbol.onload = function() {
@@ -5808,6 +6107,7 @@ function lockSetSymbolURL() {
 }
 //WATERMARK TAB
 function uploadWatermark(imageSource, otherParams) {
+	ImageLoadTracker.track(imageSource);
 	watermark.src = imageSource;
 	if (otherParams && otherParams == 'resetWatermark') {
 		watermark.onload = function() {
@@ -6129,7 +6429,7 @@ function drawCard() {
 		var y = parseInt(card.serialY) || 1383;
 		var scale = parseFloat(card.serialScale) || 1.0;
 
-		cardContext.drawImage(serial, scaleX(x/2010), scaleY(y/2814), scaleX(464/2010) * scale, scaleY(143/2814) * scale);
+		cardContext.drawImage(serial, scaleX(x/2010), scaleY(y/2814), scaleWidth(464/2010) * scale, scaleHeight(143/2814) * scale);
 
 		var number = {
 			name:"Number",
@@ -6191,6 +6491,11 @@ function drawCard() {
 	// show preview
 	previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 	previewContext.drawImage(cardCanvas, 0, 0, previewCanvas.width, previewCanvas.height);
+
+	if (window.cardDrawingPromiseResolver) {
+        window.cardDrawingPromiseResolver();
+        window.cardDrawingPromiseResolver = null;
+	}
 }
 //DOWNLOADING
 function downloadCard(alt = false, jpeg = false) {
@@ -6202,7 +6507,7 @@ function downloadCard(alt = false, jpeg = false) {
 		var imageName = getCardName();
 		if (jpeg) {
 			imageDataURL = cardCanvas.toDataURL('image/jpeg', 0.8);
-			imageName = imageName + '.jpeg';
+			imageName = imageName + '.jpg';
 		} else {
 			imageDataURL = cardCanvas.toDataURL('image/png');
 			imageName = imageName + '.png';
@@ -6226,6 +6531,127 @@ function downloadCard(alt = false, jpeg = false) {
 			downloadElement.remove();
 		}
 	}
+}
+async function bulkDownloadZip() {
+    // 1. Initial checks for libraries and saved cards.
+    if (typeof JSZip === 'undefined') {
+        notify('Required library (JSZip) has not loaded yet. Please wait a moment and try again.', 5);
+        return;
+    }
+    const cardKeys = JSON.parse(localStorage.getItem('cardKeys'));
+    if (!cardKeys || cardKeys.length === 0) {
+        notify('No saved cards found to download.', 3);
+        return;
+    }
+
+    let fileHandle = null;
+    let useStreaming = false;
+
+    // 2. Trigger the file picker immediately to capture the user gesture.
+    if (window.showSaveFilePicker) {
+        try {
+            notify('Please choose a location to save your ZIP file.', 15);
+            fileHandle = await window.showSaveFilePicker({
+                suggestedName: 'CardConjurer_Bulk.zip',
+                types: [{
+                    description: 'ZIP file',
+                    accept: { 'application/zip': ['.zip'] },
+                }],
+            });
+            useStreaming = true;
+        } catch (err) {
+            // This error occurs if the user clicks "Cancel" in the save dialog.
+            if (err.name === 'AbortError') {
+                notify('Save operation cancelled.', 3);
+                return; // Exit the function entirely if the user cancels.
+            }
+            // If another error occurs, fall back to the in-memory method.
+            console.error("Could not get file handle, falling back to in-memory method:", err);
+        }
+    }
+
+    // 3. Save the current state and prepare the zip object.
+    notify(`Preparing to process ${cardKeys.length} cards...`, 10);
+    const zip = new JSZip();
+    const tempKey = '__temp_current_card_state__';
+    const cardToSave = JSON.parse(JSON.stringify(card));
+    cardToSave.frames.forEach(frame => {
+        delete frame.image;
+        frame.masks.forEach(mask => delete mask.image);
+    });
+    localStorage.setItem(tempKey, JSON.stringify(cardToSave));
+
+    // 4. Loop through each saved card to render and add it to the zip object.
+    for (const [index, key] of cardKeys.entries()) {
+        try {
+			notify(`Processing card ${index + 1} of ${cardKeys.length}: ${key}`, 1);
+
+            ImageLoadTracker.start();
+            FontLoadTracker.start();
+            await loadCard(key);
+            drawText();
+            
+            const imagePromise = ImageLoadTracker.waitForAll();
+            const fontPromise = FontLoadTracker.waitForAll();
+            await Promise.all([imagePromise, fontPromise]);
+            
+            await new Promise(resolve => setTimeout(resolve, 50));
+            drawCard();
+            
+            const imageName = getCardName() + '.png';
+            const imageData = cardCanvas.toDataURL('image/png').split(',')[1];
+            
+            zip.file(imageName, imageData, { base64: true });
+            console.log(`Zipped: ${imageName}`);
+
+        } catch (error) {
+            console.error(`Failed to process and zip card "${key}":`, error);
+            notify(`Skipping card "${key}" due to an error.`, 3);
+        } finally {
+            ImageLoadTracker.stop();
+            FontLoadTracker.stop();
+        }
+    }
+
+    // 5. Generate and save the ZIP file using the appropriate method.
+    try {
+        if (useStreaming && fileHandle) {
+            // Ideal Path: Manually pump the JSZip stream to the WritableStream.
+            notify('Saving ZIP file to disk...', 10);
+            const writable = await fileHandle.createWritable();
+
+            await new Promise((resolve, reject) => {
+                const stream = zip.generateInternalStream({ type: 'uint8array', streamFiles: true });
+                
+                stream
+                    .on('data', (chunk) => { writable.write(chunk).catch(reject); })
+                    .on('end', () => { writable.close().then(resolve).catch(reject); })
+                    .on('error', (err) => { reject(err); })
+                    .resume();
+            });
+            notify('ZIP file saved successfully!', 5);
+
+        } else {
+            // Fallback Path: For browsers without streaming support.
+            notify('Streaming not supported. Building ZIP in memory... This may be slow or fail.', 10);
+            const content = await zip.generateAsync({ type: 'blob' });
+            
+            const downloadElement = document.createElement('a');
+            downloadElement.href = URL.createObjectURL(content);
+            downloadElement.download = 'CardConjurer_Bulk.zip';
+            document.body.appendChild(downloadElement);
+            downloadElement.click();
+            document.body.removeChild(downloadElement);
+        }
+    } catch (err) {
+        console.error('Failed to generate or save ZIP file:', err);
+        notify('An error occurred while saving the ZIP file.', 5);
+    }
+    
+    // 6. Restore the user's original card state.
+    await loadCard(tempKey);
+    localStorage.removeItem(tempKey);
+    console.log('Bulk download process finished. User state restored.');
 }
 //IMPORT/SAVE TAB
 function importCard(cardObject) {
@@ -6652,7 +7078,7 @@ function parseRollAbilities(text) {
 }
 
 function parseStationCard(oracleText) {
-    if (!oracleText || !oracleText.includes('STATION')) {
+    if (!oracleText || !oracleText.includes('Station')) {
         return null;
     }
 
@@ -6665,8 +7091,8 @@ function parseStationCard(oracleText) {
     // Format station reminder text with italics
     preStationText = preStationText.replace(/Station (\([^)]+\))/g, 'Station {i}$1{/i}');
     
-    // Find all STATION abilities with their numbers - more flexible regex
-    const stationRegex = /STATION (\d+\+)\s*\n([^]*?)(?=\nSTATION \d+\+|$)/g;
+    // Updated regex to match new scryfall format: "10+ | ability text"
+    const stationRegex = /(\d+\+)\s*\|\s*([^\n]+)/g;
     const stationAbilities = [];
     
     let match;
@@ -6684,17 +7110,22 @@ function parseStationCard(oracleText) {
 }
 
 function changeCardIndex() {
-	var cardToImport = scryfallCard[document.querySelector('#import-index').value];
+	let cardToImport = scryfallCard[document.querySelector('#import-index').value];
 	// Add debug logging for card Layout detection
 	console.log('Card layout:', cardToImport.layout);
 	console.log('Card version:', card.version);
 
-    // Clear all existing text fields to prevent old data from persisting BUT preserve Multi Face reminder text if we're using a Multi Face frame
-    var savedFuseReminderText = '';
+	if (cardToImport.set == "plst") {
+		var components = cardToImport.collector_number.split('-');
+		cardToImport.set = components[0];
+		cardToImport.collector_number = components[1];
+	}
+	// Clear all existing text fields to prevent old data from persisting BUT preserve Multi Face reminder text if we're using a Multi Face frame
+	var savedFuseReminderText = '';
 	var savedDescriptiveTexts = {};
-    if (card.text && card.text.reminder && card.version === 'fuse' || card.version === 'room') {
-        savedFuseReminderText = card.text.reminder.text;
-    }
+	if (card.text && card.text.reminder && card.version === 'fuse' || card.version === 'room') {
+		savedFuseReminderText = card.text.reminder.text;
+	}
 	// Save descriptive texts for vanguard
 	if (card.text) {
 		// Save static descriptive texts that shouldn't be overwritten
@@ -6704,39 +7135,385 @@ function changeCardIndex() {
 				savedDescriptiveTexts[field] = card.text[field].text;
 			}
 		});
-    
-        // Clear all text fields
-        Object.keys(card.text).forEach(key => {
-            card.text[key].text = '';
-        });
-        
-        // Restore descriptive texts
-        Object.keys(savedDescriptiveTexts).forEach(field => {
-            if (card.text[field]) {
-                card.text[field].text = savedDescriptiveTexts[field];
-            }
-        });
-    }
+	
+		// Clear all text fields
+		Object.keys(card.text).forEach(key => {
+			card.text[key].text = '';
+		});
+		
+		// Restore descriptive texts
+		Object.keys(savedDescriptiveTexts).forEach(field => {
+			if (card.text[field]) {
+				card.text[field].text = savedDescriptiveTexts[field];
+			}
+		});
+	}
 
-    // Update reminder text from imported card if available
-    var importedReminderText = '';
-    if (cardToImport.oracle_text) {
-        // Extract reminder text from oracle text (text in parentheses)
-        var reminderMatch = cardToImport.oracle_text.match(/\([^)]+\)/);
-        if (reminderMatch) {
-            importedReminderText = reminderMatch[0];
-        }
-    }
+	// Update reminder text from imported card if available
+	var importedReminderText = '';
+	if (cardToImport.oracle_text) {
+		// Extract reminder text from oracle text (text in parentheses)
+		var reminderMatch = cardToImport.oracle_text.match(/\([^)]+\)/);
+		if (reminderMatch) {
+			importedReminderText = reminderMatch[0];
+		}
+	}
 
-    // Restore reminder text: use imported if available, otherwise use saved
-    if (card.text && card.text.reminder && (card.version === 'fuse' || card.version === 'room')) {
-        card.text.reminder.text = importedReminderText || savedFuseReminderText;
-    }
+	// Restore reminder text: use imported if available, otherwise use saved
+	if (card.text && card.text.reminder && (card.version === 'fuse' || card.version === 'room')) {
+		card.text.reminder.text = importedReminderText || savedFuseReminderText;
+	}
 		
 	//text
 	var langFontCode = "";
 	if (cardToImport.lang == "ph") {langFontCode = "{fontphyrexian}"}
-	var name = cardToImport.name || '';
+	// Handle Multi Faced Card Layouts
+	const multiFacedVersions = ['flip', 'split', 'fuse', 'aftermath', 'adventure', 'omen', 'room', 'battle', 'transform', 'modal', 'prepare'];
+	const isMultiFacedVersion = multiFacedVersions.some(keyword => card.version.toLowerCase().includes(keyword));
+	if (['flip', 'modal_dfc', 'transform', 'split', 'adventure', 'omen', 'prepare'].includes(cardToImport.layout) && isMultiFacedVersion) {
+		const flipData = parseMultiFacedCards(cardToImport);
+		if (!flipData) {
+			console.error('Failed to parse Multi Faced card data');
+			return;
+		}
+	
+		// Add artist info
+		if (cardToImport.artist) {
+			artistEdited(cardToImport.artist);
+		}
+	
+		// Handle art loading 
+		if (cardToImport.image_uris?.art_crop) {
+			uploadArt(cardToImport.image_uris.art_crop, 'autoFit');
+		}
+	
+		// Handle set symbol
+		if (!document.querySelector('#lockSetSymbolCode').checked) {
+			document.querySelector('#set-symbol-code').value = cardToImport.set;
+			document.querySelector('#set-symbol-rarity').value = cardToImport.rarity.slice(0, 1);
+			if (!document.querySelector('#lockSetSymbolURL').checked) {
+			fetchSetSymbol();
+			}
+		}
+	
+		// Multi Faced card handling
+		// Update text fields based on card version
+		//Front Face (standard handling for all multi-faced cards)
+		if (card.text?.title && card.text?.mana) {
+			card.text.title.text = langFontCode + flipData.front.name;
+			card.text.type.text = langFontCode + flipData.front.type; 
+			card.text.rules.text = langFontCode + flipData.front.rules;
+			if (flipData.front.flavor) {
+				card.text.rules.text += '{flavor}' + curlyQuotes(flipData.front.flavor.replace('\n', '{lns}'));
+			}
+			card.text.mana.text = flipData.front.mana || '';
+			
+			// Handle PT vs Defense based on card version
+			if (card.version === 'battle') {
+				// For battles, only the defense field is unique
+				if (card.text.defense) {
+					card.text.defense.text = flipData.front.defense || '';
+				}
+			} else {
+				// For other multi-faced cards, use standard PT
+				if (card.text.pt) {
+					card.text.pt.text = flipData.front.pt || '';
+				}
+			}
+		}
+
+		// Handle MDFC cards separately (they use flipsideType and flipSideReminder)
+		if (cardToImport.layout === 'modal_dfc' && card.text?.flipsideType && card.text?.flipSideReminder) {
+			card.text.flipsideType.text = langFontCode + flipData.back.type;
+			card.text.flipSideReminder.text = langFontCode + flipData.back.rules;
+		}
+		//Back Face (standard handling for other multi-faced cards)
+		else if (card.text?.title2 && card.text?.mana2) {
+			card.text.title2.text = langFontCode + flipData.back.name;
+			// Skip importing back type for room cards AND battle cards
+			if (!cardToImport.type_line?.toLowerCase().includes('room')) {
+				card.text.type2.text = langFontCode + flipData.back.type;
+			}
+			card.text.rules2.text = langFontCode + flipData.back.rules;
+			if (flipData.back.flavor) {
+				card.text.rules2.text += '{flavor}' + curlyQuotes(flipData.back.flavor.replace('\n', '{lns}'));
+			}
+			card.text.mana2.text = flipData.back.mana || '';
+			if (card.text.pt2) {
+				card.text.pt2.text = flipData.back.pt || '';
+			}
+		}
+		
+		// Handle pt2 for battle and transform front faces (cards without title2/mana2)
+		if ((card.version === 'battle' || card.version.includes('transform') || card.version.includes('Transform')) && card.text?.pt2) {
+			card.text.pt2.text = flipData.back.pt || '';
+		}
+
+		if ((card.version.includes('transform') || card.version.includes('Transform')) && card.text?.reminder && flipData.back.pt) {
+			card.text.reminder.text = flipData.back.pt;
+		}
+	
+		textEdited();
+	}
+
+	// Handle Unique Layouts (Leveler, Prototype, Mutate, and Vanguard)
+	else if (['leveler', 'prototype', 'mutate', 'vanguard'].includes(cardToImport.layout) && ['leveler', 'prototype', 'mutate', 'vanguard'].includes(card.version)) {
+		let uniqueData;
+		
+		if (cardToImport.layout === 'leveler') {
+			uniqueData = parseLevelerCard(cardToImport);
+		} else if (cardToImport.layout === 'prototype') {
+			uniqueData = parsePrototypeLayout(cardToImport);
+		} else if (cardToImport.layout === 'mutate') {
+			uniqueData = parseMutateLayout(cardToImport);
+		} else if (cardToImport.layout === 'vanguard') {
+			uniqueData = parseVanguardLayout(cardToImport);
+		}
+
+		// Add artist info
+		if (cardToImport.artist) {
+			artistEdited(cardToImport.artist);
+		}
+
+		// Handle art loading 
+		if (cardToImport.image_uris?.art_crop) {
+			uploadArt(cardToImport.image_uris.art_crop, 'autoFit');
+		}
+
+		// Handle set symbol
+		if (!document.querySelector('#lockSetSymbolCode').checked) {
+			document.querySelector('#set-symbol-code').value = cardToImport.set;
+			document.querySelector('#set-symbol-rarity').value = cardToImport.rarity.slice(0, 1);
+			if (!document.querySelector('#lockSetSymbolURL').checked) {
+				fetchSetSymbol();
+			}
+		}
+
+		// Populate text fields based on layout
+		if (card.text?.title) {
+			card.text.title.text = langFontCode + uniqueData.name;
+			card.text.type.text = langFontCode + uniqueData.type;
+			card.text.mana.text = uniqueData.mana;
+			
+			// Base P/T
+			if (card.text.pt) {
+				card.text.pt.text = uniqueData.basePT;
+			}
+			
+			if (uniqueData.layout === 'leveler') {
+				card.text.levelup.text = langFontCode + uniqueData.levelUpText;
+				
+				// Level 1-2 data
+				if (uniqueData.levels[0]) {
+					const level1Data = uniqueData.levels[0];
+					if (card.text.level2) {
+						card.text.level2.text = `LEVEL\n{fontsize${scaleHeight(0.0162)}}${level1Data.range}`;
+					}
+					if (card.text.rules2) {
+						card.text.rules2.text = langFontCode + level1Data.rulesText;
+					}
+					if (card.text.pt2) {
+						card.text.pt2.text = level1Data.pt;
+					}
+				}
+				
+				// Level 3+ data
+				if (uniqueData.levels[1]) {
+					const level2Data = uniqueData.levels[1];
+					if (card.text.level3) {
+						card.text.level3.text = `LEVEL\n{fontsize${scaleHeight(0.0162)}}${level2Data.range}`;
+					}
+					if (card.text.rules3) {
+						card.text.rules3.text = langFontCode + level2Data.rulesText;
+					}
+					if (card.text.pt3) {
+						card.text.pt3.text = level2Data.pt;
+					}
+				}
+			} else if (uniqueData.layout === 'prototype') {
+				if (card.text.rules2) {
+					card.text.rules2.text = langFontCode + uniqueData.rules;
+				}
+				if (card.text.prototype) {
+					card.text.prototype.text = langFontCode + uniqueData.prototype.reminderText;
+				}
+				if (card.text.mana2) {
+					card.text.mana2.text = uniqueData.prototype.cost;
+				}
+				if (card.text.pt2) {
+					card.text.pt2.text = uniqueData.prototype.pt;
+				}
+			} else if (uniqueData.layout === 'mutate') {
+				if (card.text.rules2) {
+					card.text.rules2.text = langFontCode + uniqueData.rules;
+				}
+				if (card.text.mutate) {
+					card.text.mutate.text = langFontCode + uniqueData.mutate.reminderText;
+				}
+			} else if (uniqueData.layout === 'vanguard') {
+				if (card.text.ability) {
+					card.text.ability.text = langFontCode + uniqueData.rules;
+				}
+				if (card.text.flavor) {
+					card.text.flavor.text = langFontCode + uniqueData.flavor;
+				}
+				if (card.text.leftval) {
+					card.text.leftval.text = uniqueData.handModifier;
+				}
+				if (card.text.rightval) {
+					card.text.rightval.text = uniqueData.lifeModifier;
+				}
+			}
+		}
+
+		textEdited();
+	}
+
+else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('Station') && card.version.includes('station')) {
+
+	// Clear existing station fields
+	if (card.text) {
+		['ability0', 'ability1', 'ability2'].forEach(field => {
+			if (card.text[field]) card.text[field].text = '';
+		});
+	}
+	
+	// Clear station badge values immediately
+	if (card.station?.badgeValues) {
+		card.station.badgeValues[1] = '';
+		card.station.badgeValues[2] = '';
+	}
+	
+	const stationData = parseStationCard(cardToImport.oracle_text);
+	const name = (cardToImport.printed_name || cardToImport.name || '').replace(/^A-/, '{alchemy}');
+
+	// Populate basic text fields
+	const basicFields = [
+		['title', curlyQuotes(name)],
+		['type', cardToImport.type_line],
+		['mana', cardToImport.mana_cost || ''],
+		['pt', cardToImport.power && cardToImport.toughness ? `${cardToImport.power}/${cardToImport.toughness}` : '']
+	];
+	
+	basicFields.forEach(([field, value]) => {
+		if (card.text?.[field]) card.text[field].text = langFontCode + value;
+	});
+	
+	// Station ability placement logic
+	if (stationData) {
+		// Better regex to separate pre-text from Station reminder text
+		let preText = '';
+		let reminderText = '';
+		
+		if (stationData.preStationText) {
+			// Look for Station reminder text (either already italicized or not)
+			const stationReminderMatch = stationData.preStationText.match(/(.*?)(Station \{i\}\([^)]+\)\{\/i\}|Station \([^)]+\))/s);
+			
+			if (stationReminderMatch) {
+				preText = stationReminderMatch[1].trim();
+				
+				// Format the reminder text with italics if not already done
+				if (stationReminderMatch[2].includes('{i}')) {
+					reminderText = stationReminderMatch[2];
+				} else {
+					reminderText = stationReminderMatch[2].replace(/Station (\([^)]+\))/, 'Station {i}$1{/i}');
+				}
+			} else {
+				// If no Station reminder found, treat entire text as pre-text
+				preText = stationData.preStationText.trim();
+			}
+		}
+		
+		const numAbilities = stationData.stationAbilities.length;
+		
+		// AUTO-CHECK DISABLE FIRST SQUARE FOR SINGLE ABILITIES
+		const shouldDisableFirstSquare = numAbilities === 1;
+		
+		// Define placement scenarios as configuration
+		const scenarios = {
+			// [hasPreText, numAbilities]: [ability0, ability1, ability2, badgeSlots]
+			[false + ',' + 1]: ['', reminderText, stationData.stationAbilities[0]?.text, [null, stationData.stationAbilities[0]?.number]],
+			[true + ',' + 1]: [preText, reminderText, stationData.stationAbilities[0]?.text, [null, stationData.stationAbilities[0]?.number]],
+			[false + ',' + 2]: [reminderText, stationData.stationAbilities[0]?.text, stationData.stationAbilities[1]?.text, [stationData.stationAbilities[0]?.number, stationData.stationAbilities[1]?.number]],
+			[true + ',' + 2]: [preText + (reminderText ? '\n' + reminderText : ''), stationData.stationAbilities[0]?.text, stationData.stationAbilities[1]?.text, [stationData.stationAbilities[0]?.number, stationData.stationAbilities[1]?.number]]
+		};
+		
+		const scenario = scenarios[Boolean(preText) + ',' + numAbilities];
+		if (scenario) {
+			const [ability0, ability1, ability2, badges] = scenario;
+			
+			// Set abilities
+			[ability0, ability1, ability2].forEach((text, i) => {
+				if (text && card.text[`ability${i}`]) {
+					card.text[`ability${i}`].text = langFontCode + text;
+				}
+			});
+			
+			// Set disable first square checkbox and station setting
+			setTimeout(() => {
+				const disableCheckbox = document.querySelector('#station-disable-first-ability');
+				if (disableCheckbox) {
+					disableCheckbox.checked = shouldDisableFirstSquare;
+				}
+				if (card.station) {
+					card.station.disableFirstAbility = shouldDisableFirstSquare;
+				}
+				
+				// SET STATION-SPECIFIC UI VALUES FOR SINGLE ABILITY IMPORTS
+				if (shouldDisableFirstSquare && !Boolean(preText) && card.station?.importSettings?.singleAbility) {
+					// Get version-specific settings or fall back to default
+					const versionOverrides = card.station.importSettings.versionOverrides || {};
+					const versionSettings = versionOverrides[card.version] || card.station.importSettings.singleAbility;
+					
+					// Set Y offset
+					const yOffsetInput = document.querySelector('#station-square-y');
+					if (yOffsetInput) {
+						yOffsetInput.value = versionSettings.yOffset;
+						if (card.station.squares && card.station.squares[1]) {
+							card.station.squares[1].y = versionSettings.yOffset + 76;
+						}
+					}
+					
+					// Set first square height
+					const height1Input = document.querySelector('#station-square-height-1');
+					if (height1Input) {
+						height1Input.value = versionSettings.height1;
+						if (card.station.squares && card.station.squares[1]) {
+							card.station.squares[1].height = versionSettings.height1;
+						}
+					}
+				}
+		
+				
+				// Clear DOM inputs first
+				['#station-badge-value-1', '#station-badge-value-2'].forEach(selector => {
+					const input = document.querySelector(selector);
+					if (input) input.value = '';
+				});
+				
+				// Set new badge values
+				badges.forEach((badge, i) => {
+					if (badge) {
+						const input = document.querySelector(`#station-badge-value-${i + 1}`);
+						if (input) input.value = badge;
+						if (card.station?.badgeValues) card.station.badgeValues[i + 1] = badge;
+					}
+				});
+				
+				// Force station redraw after all values are set
+				setTimeout(() => {
+					if (typeof stationEdited === 'function') {
+						stationEdited();
+					}
+				}, 50);
+			}, 100);
+		}
+	}
+	
+	textEdited();
+}
+
+	var name = cardToImport.printed_name || cardToImport.name || '';
 	if (name.startsWith('A-')) { name = name.replace('A-', '{alchemy}'); }
 
 	if (card.text.title) {
@@ -7010,8 +7787,8 @@ function changeCardIndex() {
 	document.querySelector('#art-name').value = cardToImport.name;
 	fetchScryfallData(cardToImport.name, artFromScryfall, 'art');
 	if (document.querySelector('#importAllPrints').checked) {
-		// document.querySelector('#art-index').value = document.querySelector('#import-index').value;
-		// changeArtIndex();
+		document.querySelector('#art-index').value = document.querySelector('#import-index').value;
+		changeArtIndex();
 	}
 	//set symbol
 	if (!document.querySelector('#lockSetSymbolCode').checked) {
@@ -7300,13 +8077,17 @@ async function imageLocal(event, destination, otherParams) {
 	await reader.readAsDataURL(event.target.files[0]);
 }
 function loadScript(scriptPath) {
+	return new Promise((resolve, reject) => {
 	var script = document.createElement('script');
 	script.setAttribute('type', 'text/javascript');
-	script.onerror = function(){notify('A script failed to load, likely due to an update. Please reload your page. Sorry for the inconvenience.');}
-	script.setAttribute('src', scriptPath);
-	if (typeof script != 'undefined') {
-		document.querySelectorAll('head')[0].appendChild(script);
+	script.onload = resolve;
+	script.onerror = function(){
+		notify('A script failed to load, likely due to an update. Please reload your page. Sorry for the inconvenience.');
+		reject();
 	}
+	script.setAttribute('src', scriptPath);
+	document.querySelectorAll('head')[0].appendChild(script);
+	});
 }
 // Stretchable SVGs
 function stretchSVG(frameObject) {
@@ -7574,5 +8355,6 @@ bindInputs('#show-guidelines', '#show-guidelines-2', true);
 
 // Load / init whatever
 loadScript('/js/frames/groupStandard-3.js');
+loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
 loadAvailableCards();
 initDraggableArt();
