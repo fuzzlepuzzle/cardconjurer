@@ -1,5 +1,6 @@
 loadFramePacks([
 	{name:'Basic Lands', value:'disabled'},
+	{name:'Edge of Eternities Basics (EOE)', value:'EOEBasics'},
 	{name:'Kamigawa Basics (NEO)', value:'NeoBasics'},
 	{name:'Fullart Basics (2022)', value:'TextlessBasics2022'},
 	{name:'Fullart Basics (Universes Beyond)', value:'TextlessBasics2022UB'},
@@ -7,6 +8,7 @@ loadFramePacks([
 	{name:'Fullart Basics (THB)', value:'TextlessBasics'},
 	{name:'Fullart Basics (ZEN)', value:'ZendikarBasic-1'},
 	{name:'Fullart Snow Basics', value:'FullartBasicRoundBottom'},
+	{name:'Unfinity Basics (UNF)', value:'Unfinity'},
 	{name:'Unstable Basics (UST)', value:'Unstable'},
 	{name:'Unhinged Basics (UNH)', value:'Unhinged'},
 	{name:'Other', value:'disabled'},
