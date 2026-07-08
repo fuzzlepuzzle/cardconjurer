@@ -1,7 +1,14 @@
 loadFramePacks([
 	{name:'Regular Frames', value:'PromoOpenHouse'},
+<<<<<<< Updated upstream
 	{name:'Borderless Frames', value:'PromoRegular-1'},
 	{name:'Borderless Frames (Extra Short)', value:'IkoShort'},
+=======
+	{name:'Borderless (Short)', value:'PromoRegular-1'},
+	{name:'Borderless (Alt Short)', value:'BorderlessShort'},
+	{name:'Borderless (Extra Short)', value:'IkoShort'},
+	{name:'Nyx Frames', value:'PromoNyx'},
+>>>>>>> Stashed changes
 	{name:'Extended Art Frames', value:'PromoExtended'},
 	{name:'Nickname Frames', value:'PromoNickname'},
 	{name:'Generic Showcase', value:'PromoGenericShowcase'},

@@ -1,5 +1,13 @@
 /*fonts*/
 @font-face {
+	font-family: eveleth;
+	src: url("../fonts/Daggerheart-Eveleth.otf") format('opentype');
+}
+@font-face {
+	font-family: overpass;
+	src: url("../fonts/Daggerheart-Overpass.otf") format('opentype');
+}
+@font-face {
 	font-family: gothammedium;
 	src: url("../fonts/gotham-medium.ttf") format('truetype');
 }

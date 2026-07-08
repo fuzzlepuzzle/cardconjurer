@@ -184,8 +184,15 @@ const frameNames = new Map ([
 	['Cardback', 'Cardback'],
 	//promo
 	['Promos', 'PromoOpenHouse'],
+<<<<<<< Updated upstream
 	['Promo Borderless Frames', 'PromoRegular-1'],
 	['Promo Borderless Frames (Extra Short)', 'IkoShort'],
+=======
+	['Promo Borderless (Short)', 'PromoRegular-1'],
+	['Promo Borderless (Alt Short)', 'BorderlessShort'],
+	['Promo Borderless (Extra Short)', 'IkoShort'],
+	['Promo Nyx Frames', 'PromoNyx'],
+>>>>>>> Stashed changes
 	['Promo Extended Art Frames', 'PromoExtended'],
 	['Promo Nickname Frames', 'PromoNickname'],
 	['Promo Generic Showcase', 'PromoGenericShowcase'],
@@ -208,6 +215,7 @@ const frameNames = new Map ([
 	['Misc Custom Frames', 'MiscCustom'],
 	['Deck Covers', 'CustomDeckCover'],
 	['Simple Inventions', 'SimpleInventions'],
+	['Kaladesh Dark', 'KaladeshDark'],
 	['Tapped (Horizontal M15)', 'Tapped'],
 	['Textless Duals', 'CustomDualLands'],
 	['Seventh Edition Planeswalkers', 'PlaneswalkerSeventh'],

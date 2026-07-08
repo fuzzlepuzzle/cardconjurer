@@ -1,8 +1,10 @@
 loadFramePacks([	
 	{name:'Universes Beyond', value:'disabled'},
 	{name:'Universes Beyond', value:'UB'},
-	{name:'Universes Beyond (Full art)', value:'UBFull'},
-	{name:'Universes Beyond (Extended art)', value:'UBExtendedArt'},
+	{name:'Universes Beyond (Full Art)', value:'UBFull'},
+	{name:'Universes Beyond (Extended Art)', value:'UBExtendedArt'},
+	{name:'Universes Beyond (Tall Text)', value:'UBTallFrame'},
+
 
 	{name:'Sagas (Universes Beyond)', value:'SagaUB'},
 	{name:'Spree (Universes Beyond)', value:'SpreeUB'},

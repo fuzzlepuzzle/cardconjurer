@@ -1,7 +1,6 @@
 loadFramePacks([
-	{name:'Misc. Custom Frames', value:'MiscCustom'},
-	{name:'Deck Covers', value:'CustomDeckCover'},
 	{name:'Simple Inventions', value:'SimpleInventions'},
+	{name:'Kaladesh Dark', value:'KaladeshDark'},
 	{name:'Tapped (Horizontal M15)', value:'Tapped'},
 	{name:'Textless Duals', value:'CustomDualLands'},
 	{name:'Textless Seventh', value:'SeventhTextless'},
@@ -10,6 +9,14 @@ loadFramePacks([
 	{name:'Seventh Edition Snow Lands', value:'SeventhSnowLands'},
 	{name:'Floating Old Border', value:'OldFloating'},
 	{name:'Floating Old Border (Short)', value:'OldFloatingShort'},
+<<<<<<< Updated upstream
+=======
+	{name:'Burning Revelation (SLD)', value:'BurningRevelation'},
+	
+	{name:'Misc', value:'disabled'},
+	{name:'Misc. Custom Frames', value:'MiscCustom'},
+	{name:'Deck Covers', value:'CustomDeckCover'},
+>>>>>>> Stashed changes
 
 	{name:'Modern M15 Eighth Edition Style', value:'disabled'},
 	{name:'Regular', value:'M15Eighth'},

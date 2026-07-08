@@ -1,5 +1,5 @@
 //Create objects for common properties across available frames
-var masks = [{src:'/img/frames/saga/ltr/maskNoOverlay.png', name:'No Art Overlay'}];
+var masks = [{src:'/img/frames/saga/ltr/maskNoOverlay.png', name:'No Art Overlay'}, {src:'/img/frames/saga/ltr/maskBorderless.png', name:'Borderless Overlay'}, {src:'/img/frames/saga/ltr/maskBorderlessWithBorder.png', name:'Borderless With Border Overlay'}];
 var stampBounds = {x:878/2010, y:2560/2814, width:256/2010, height:116/2814};
 //defines available frames
 availableFrames = [
@@ -9,14 +9,7 @@ availableFrames = [
 	{name:'Red Frame', src:'/img/frames/saga/ltr/r.png', masks:masks},
 	{name:'Green Frame', src:'/img/frames/saga/ltr/g.png', masks:masks},
 	{name:'Multicolored Frame', src:'/img/frames/saga/ltr/m.png', masks:masks},
-
-
-	// {name:'Blue Frame', src:'/img/frames/saga/regular/sagaFrameU.png', masks:masks},
-	// {name:'Black Frame', src:'/img/frames/saga/regular/sagaFrameB.png', masks:masks},
-	// {name:'Red Frame', src:'/img/frames/saga/regular/sagaFrameR.png', masks:masks},
-	// {name:'Green Frame', src:'/img/frames/saga/regular/sagaFrameG.png', masks:masks},
-	// {name:'Multicolored Frame', src:'/img/frames/saga/regular/sagaFrameM.png', masks:masks},
-	// {name:'Land Frame', src:'/img/frames/saga/regular/l.png', masks:masks},
+	
 	{name:'Banner Pinstripe (Multicolored)', src:'/img/frames/saga//ltr/sagaMidStripe.png', bounds:{x:136/2010, y:761/2814, width:41/2010, height:1435/2814}},
 	{name:'Multicolored Bars', src:'/img/frames/saga/ltr/multicolor-bar-overlay.png', mode:'color'},
 

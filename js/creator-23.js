@@ -1621,6 +1621,7 @@ function makeM15FrameByLetter(letter, mask = false, maskToRightHalf = false, sty
 	return frame;
 }
 
+<<<<<<< Updated upstream
 function makeM15NewFrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
 	letter = letter.toUpperCase();
 	var frameNames = {
@@ -1642,15 +1643,1010 @@ function makeM15NewFrameByLetter(letter, mask = false, maskToRightHalf = false, 
 		'ML': 'Multicolored Land'
 	}
 
+=======
+var autoFramePack;
+function autoFrame() {
+	var frame = document.querySelector('#autoFrame').value;
+	if (frame == 'false') { autoFramePack = null; return; }
+
+	var colors = [];
+	if (card.text.type.text.toLowerCase().includes('land')) {
+		var rules = card.text.rules.text;
+		var flavorIndex = rules.indexOf('{flavor}');
+		if (flavorIndex == -1) {
+			flavorIndex = rules.indexOf('{oldflavor}');
+		}
+		if (flavorIndex != -1) {
+			rules = rules.substring(0, flavorIndex);
+		}
+
+		var lines = rules.split('\n');
+
+		lines.forEach(function(line) {
+			var addIndex = line.indexOf('Add');
+			var length = 3;
+			if (addIndex == -1) {
+				addIndex = line.toLowerCase().indexOf(' add');
+				length = 4;
+			}
+			if (addIndex != -1) {
+				var upToAdd = line.substring(addIndex+length).toLowerCase();
+              	['W', 'U', 'B', 'R', 'G'].forEach(function (color) {
+					if (upToAdd.includes('{' + color.toLowerCase() + '}')) {
+                  		colors.push(color);
+                	}
+                });
+			}
+		});
+
+		if (!colors.includes('W') && (rules.toLowerCase().includes('plains') || card.text.type.text.toLowerCase().includes('plains'))) {
+			colors.push('W');
+		}
+		if (!colors.includes('U') && (rules.toLowerCase().includes('island') || card.text.type.text.toLowerCase().includes('island'))) {
+			colors.push('U');
+		}
+		if (!colors.includes('B') && (rules.toLowerCase().includes('swamp') || card.text.type.text.toLowerCase().includes('swamp'))) {
+			colors.push('B');
+		}
+		if (!colors.includes('R') && (rules.toLowerCase().includes('mountain') || card.text.type.text.toLowerCase().includes('mountain'))) {
+			colors.push('R');
+		}
+		if (!colors.includes('G') && (rules.toLowerCase().includes('forest') || card.text.type.text.toLowerCase().includes('forest'))) {
+			colors.push('G');
+		}
+
+		if (rules.toLowerCase().includes('search') && colors.length == 0) {
+			// TODO: This doesn't match Bog Wreckage
+			if (rules.includes('into your hand') || (rules.includes('tapped') && !(rules.toLowerCase().includes('enters the battlefield tapped')) && !(rules.toLowerCase().includes('untap')))) {
+				colors = [];
+			} else if (colors.length == 0) {
+				colors = ['W', 'U', 'B', 'R', 'G'];
+			}
+		}
+
+		if (rules.includes('any color') || rules.includes('any one color') || rules.includes('choose a color') || rules.includes('any combination of colors')) {
+			colors = ['W', 'U', 'B', 'R', 'G'];
+		}
+
+
+	} else {
+		colors = [...new Set(card.text.mana.text.toUpperCase().split('').filter(char => ['W', 'U', 'B', 'R', 'G'].includes(char)))];
+	}
+
+	var group;
+	if (frame == 'M15Regular-1') {
+		autoM15Frame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Standard-3';
+	} else if (frame == 'M15RegularNew') {
+		autoM15NewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Accurate';
+	} else if (frame == 'M15Eighth') {
+		autoM15EighthFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Custom';
+	} else if (frame == 'M15EighthUB') {
+		autoM15EighthUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Custom';
+	} else if (frame == 'UB') {
+		autoUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Showcase-5';
+	} else if (frame == 'UBNew') {
+		autoUBNewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Accurate';
+	} else if (frame == 'FullArtNew') {
+		autoFullArtNewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Accurate';
+	} else if (frame == 'Circuit') {
+		autoCircuitFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		group = 'Custom';
+	} else if (frame == 'Etched') {
+		group = 'Showcase-5';
+		autoEtchedFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+	} else if (frame == 'Praetors') {
+		group = 'Showcase-5';
+		autoPhyrexianFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+	} else if (frame == 'Seventh') {
+		group = 'Misc-2';
+		autoSeventhEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+	} else if (frame == 'M15BoxTopper') {
+		group = 'Showcase-5';
+		autoExtendedArtFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, false);
+	} else if (frame == 'M15ExtendedArtShort') {
+		group = 'Showcase-5';
+		autoExtendedArtFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, true);
+	} else if (frame == '8th') {
+		group = 'Misc-2';
+		auto8thEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+	} else if (frame == 'Borderless') {
+		group = 'Showcase-5';
+		autoBorderlessFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+	} else if (frame == 'BorderlessUB') {
+		group = 'Showcase-5';
+		autoBorderlessUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
+		frame = 'Borderless';
+	}
+
+	if (autoFramePack != frame) {
+		loadScript('/js/frames/pack' + frame + '.js');
+		autoFramePack = frame;
+	}
+}
+async function autoUBFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+
+	var style = false;
+	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+
+	if (type_line.toLowerCase().includes('legendary')) {
+		if (style == 'Nyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
+			}
+			frames.push(makeUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Crown', true, style));
+		}
+		frames.push(makeUBFrameByLetter(properties.pinline, "Crown", false, style));
+		frames.push(makeUBFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
+	}
+	frames.push(makeUBFrameByLetter(properties.pinline, "Stamp", false, style));
+	if (properties.pt) {
+		frames.push(makeUBFrameByLetter(properties.pt, 'PT', false, style));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
+	}
+	frames.push(makeUBFrameByLetter(properties.pinline, 'Pinline', false, style));
+	frames.push(makeUBFrameByLetter(properties.typeTitle, 'Type', false, style));
+	frames.push(makeUBFrameByLetter(properties.typeTitle, 'Title', false, style));
+	if (properties.pinlineRight) {
+		frames.push(makeUBFrameByLetter(properties.rulesRight, 'Rules', true, style));
+	}
+	frames.push(makeUBFrameByLetter(properties.rules, 'Rules', false, style));
+	if (properties.frameRight) {
+		frames.push(makeUBFrameByLetter(properties.frameRight, 'Frame', true, style));
+	}
+	frames.push(makeUBFrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(makeUBFrameByLetter(properties.frame, 'Border', false, style));
+
+	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoUBNewFrame(colors, mana_cost, type_line, power) {
+	autoM15NewFrame(colors, mana_cost, type_line, power, 'ub');
+}
+async function autoFullArtNewFrame(colors, mana_cost, type_line, power) {
+	autoM15NewFrame(colors, mana_cost, type_line, power, 'fullart');
+}
+async function autoCircuitFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+
+	// Set frames
+
+	if (type_line.toLowerCase().includes('legendary')) {
+		if (properties.pinlineRight) {
+			frames.push(makeCircuitFrameByLetter(properties.pinlineRight, 'Crown', true));
+		}
+		frames.push(makeCircuitFrameByLetter(properties.pinline, "Crown", false));
+		frames.push(makeCircuitFrameByLetter(properties.pinline, "Crown Border Cover", false));
+	}
+	if (properties.pt) {
+		frames.push(makeCircuitFrameByLetter(properties.pt, 'PT', false));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeCircuitFrameByLetter(properties.pinlineRight, 'Pinline', true));
+	}
+	frames.push(makeCircuitFrameByLetter(properties.pinline, 'Pinline', false));
+	frames.push(makeCircuitFrameByLetter(properties.typeTitle, 'Type', false));
+	frames.push(makeCircuitFrameByLetter(properties.typeTitle, 'Title', false));
+	if (properties.pinlineRight) {
+		frames.push(makeCircuitFrameByLetter(properties.rulesRight, 'Rules', true));
+	}
+	frames.push(makeCircuitFrameByLetter(properties.rules, 'Rules', false));
+	if (properties.frameRight) {
+		frames.push(makeCircuitFrameByLetter(properties.frameRight, 'Frame', true));
+	}
+	frames.push(makeCircuitFrameByLetter(properties.frame, 'Frame', false));
+	frames.push(makeCircuitFrameByLetter(properties.frame, 'Border', false));
+
+	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoM15Frame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('snow')) {
+		style = 'snow';
+	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+	if (type_line.includes('Legendary')) {
+		if (style == 'Nyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
+			}
+			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Crown', true, style));
+		}
+		frames.push(makeM15FrameByLetter(properties.pinline, "Crown", false, style));
+		frames.push(makeM15FrameByLetter(properties.pinline, "Crown Border Cover", false, style));
+	}
+	if (properties.pt) {
+		frames.push(makeM15FrameByLetter(properties.pt, 'PT', false, style));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Pinline', true, style));
+	}
+	frames.push(makeM15FrameByLetter(properties.pinline, 'Pinline', false, style));
+	frames.push(makeM15FrameByLetter(properties.typeTitle, 'Type', false, style));
+	frames.push(makeM15FrameByLetter(properties.typeTitle, 'Title', false, style));
+	if (properties.pinlineRight) {
+		frames.push(makeM15FrameByLetter(properties.rulesRight, 'Rules', true, style));
+	}
+	frames.push(makeM15FrameByLetter(properties.rules, 'Rules', false, style));
+	if (properties.frameRight) {
+		frames.push(makeM15FrameByLetter(properties.frameRight, 'Frame', true, style));
+	}
+	frames.push(makeM15FrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(makeM15FrameByLetter(properties.frame, 'Border', false, style));
+
+	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoM15NewFrame(colors, mana_cost, type_line, power, style = 'regular') {
+	var frames;
+	if (style == 'ub') {
+		frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp'));
+	} else {
+		frames = card.frames.filter(frame => frame.name.includes('Extension'));
+	}
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+	if (style == 'ub') {
+		if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+			style = 'ubnyx';
+		}
+	} else if (style != 'fullart') {
+	 	if (type_line.toLowerCase().includes('snow')) {
+			style = 'snow';
+		} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+			style = 'Nyx';
+		}
+	}
+
+	// Set frames
+	if (type_line.includes('Legendary')) {
+		if (style == 'Nyx' || style == 'ubnyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
+			}
+
+			frames.push(makeM15NewFrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Crown', true, style));
+		}
+		frames.push(makeM15NewFrameByLetter(properties.pinline, "Crown", false, style));
+		frames.push(makeM15NewFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
+	}
+
+	if (style == 'ub' || style == 'ubnyx') {
+		if (properties.pinlineRight) {
+			frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
+		}
+		frames.push(makeM15NewFrameByLetter(properties.pinline, "Stamp", false, style));
+	}
+
+	if (properties.pt) {
+		frames.push(makeM15NewFrameByLetter(properties.pt, 'PT', false, style));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
+	}
+	frames.push(makeM15NewFrameByLetter(properties.pinline, 'Pinline', false, style));
+	frames.push(makeM15NewFrameByLetter(properties.typeTitle, 'Type', false, style));
+	frames.push(makeM15NewFrameByLetter(properties.typeTitle, 'Title', false, style));
+	if (properties.pinlineRight) {
+		frames.push(makeM15NewFrameByLetter(properties.rulesRight, 'Rules', true, style));
+	}
+	frames.push(makeM15NewFrameByLetter(properties.rules, 'Rules', false, style));
+	if (properties.frameRight) {
+		frames.push(makeM15NewFrameByLetter(properties.frameRight, 'Frame', true, style));
+	}
+	frames.push(makeM15NewFrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(makeM15NewFrameByLetter(properties.frame, 'Border', false, style));
+
+	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoM15EighthFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('snow')) {
+		style = 'snow';
+	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+	if (type_line.includes('Legendary')) {
+		if (style == 'Nyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
+			}
+			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Crown', true, style));
+		}
+		frames.push(makeM15FrameByLetter(properties.pinline, "Crown", false, style));
+		frames.push(makeM15FrameByLetter(properties.pinline, "Crown Border Cover", false, style));
+	}
+	if (properties.pt) {
+		frames.push(makeM15EighthFrameByLetter(properties.pt, 'PT', false, style));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeM15EighthFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
+	}
+	frames.push(makeM15EighthFrameByLetter(properties.pinline, 'Pinline', false, style));
+	frames.push(makeM15EighthFrameByLetter(properties.typeTitle, 'Type', false, style));
+	frames.push(makeM15EighthFrameByLetter(properties.typeTitle, 'Title', false, style));
+	if (properties.pinlineRight) {
+		frames.push(makeM15EighthFrameByLetter(properties.rulesRight, 'Rules', true, style));
+	}
+	frames.push(makeM15EighthFrameByLetter(properties.rules, 'Rules', false, style));
+	if (properties.frameRight) {
+		frames.push(makeM15EighthFrameByLetter(properties.frameRight, 'Frame', true, style));
+	}
+	frames.push(makeM15EighthFrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(makeM15EighthFrameByLetter(properties.frame, 'Border', false, style));
+
+	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoM15EighthUBFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('snow')) {
+		style = 'snow';
+	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+	if (type_line.includes('Legendary')) {
+		if (style == 'Nyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
+			}
+			frames.push(makeM15EighthUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Crown', true, style));
+		}
+		frames.push(makeM15EighthUBFrameByLetter(properties.pinline, "Crown", false, style));
+		frames.push(makeM15EighthUBFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
+	}
+	if (properties.pt) {
+		frames.push(makeM15EighthUBFrameByLetter(properties.pt, 'PT', false, style));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
+	}
+	frames.push(makeM15EighthUBFrameByLetter(properties.pinline, 'Pinline', false, style));
+	frames.push(makeM15EighthUBFrameByLetter(properties.typeTitle, 'Type', false, style));
+	frames.push(makeM15EighthUBFrameByLetter(properties.typeTitle, 'Title', false, style));
+	if (properties.pinlineRight) {
+		frames.push(makeM15EighthUBFrameByLetter(properties.rulesRight, 'Rules', true, style));
+	}
+	frames.push(makeM15EighthUBFrameByLetter(properties.rules, 'Rules', false, style));
+	if (properties.frameRight) {
+		frames.push(makeM15EighthUBFrameByLetter(properties.frameRight, 'Frame', true, style));
+	}
+	frames.push(makeM15EighthUBFrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(makeM15EighthUBFrameByLetter(properties.frame, 'Border', false, style));
+
+	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoBorderlessFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Borderless');
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+	if (type_line.includes('Legendary')) {
+		if (style == 'Nyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
+			}
+			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Crown', true, style));
+		}
+		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown", false, style));
+		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Legend Crown Outline", false))
+		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown Border Cover", false));
+	}
+	if (properties.pt) {
+		frames.push(makeBorderlessFrameByLetter(properties.pt, 'PT', false));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Pinline', true));
+	}
+	frames.push(makeBorderlessFrameByLetter(properties.pinline, 'Pinline', false));
+	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Type', false));
+	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Title', false));
+	frames.push(makeBorderlessFrameByLetter(properties.rules, 'Rules', false));
+	frames.push(makeBorderlessFrameByLetter(properties.frame, 'Border', false));
+
+	// if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+	// 	card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	// }
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoBorderlessUBFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Borderless');
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+	if (type_line.includes('Legendary')) {
+		if (style == 'Nyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
+			}
+			frames.push(makeUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Crown', true, style, true));
+		}
+		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown", false, style, true));
+		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Legend Crown Outline", false))
+		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown Border Cover", false));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
+	}
+	frames.push(makeUBFrameByLetter(properties.pinline, "Stamp", false, style));
+	if (properties.pt) {
+		frames.push(makeBorderlessFrameByLetter(properties.pt, 'PT', false));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Pinline', true));
+	}
+	frames.push(makeBorderlessFrameByLetter(properties.pinline, 'Pinline', false));
+	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Type', false));
+	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Title', false));
+	frames.push(makeBorderlessFrameByLetter(properties.rules, 'Rules', false));
+	frames.push(makeBorderlessFrameByLetter(properties.frame, 'Border', false));
+
+	// if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+	// 	card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	// }
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function auto8thEditionFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+	if (properties.pt) {
+		frames.push(make8thEditionFrameByLetter(properties.pt, 'PT', false, style));
+	}
+	if (properties.pinlineRight) {
+		frames.push(make8thEditionFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
+	}
+	frames.push(make8thEditionFrameByLetter(properties.pinline, 'Pinline', false, style));
+	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Type', false, style));
+	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Title', false, style));
+	if (properties.pinlineRight) {
+		frames.push(make8thEditionFrameByLetter(properties.rulesRight, 'Rules', true, style));
+	}
+	frames.push(make8thEditionFrameByLetter(properties.rules, 'Rules', false, style));
+	if (properties.frameRight) {
+		frames.push(make8thEditionFrameByLetter(properties.frameRight, 'Frame', true, style));
+	}
+	frames.push(make8thEditionFrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(make8thEditionFrameByLetter(properties.frame, 'Border', false, style));
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoExtendedArtFrame(colors, mana_cost, type_line, power, short) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('snow')) {
+		style = 'snow';
+	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+	if (type_line.includes('Legendary')) {
+		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown Outline", false, style, short));
+
+		if (style == 'Nyx') {
+			if (properties.pinlineRight) {
+				frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style, short));
+			}
+			frames.push(makeExtendedArtFrameByLetter(properties.pinline, 'Inner Crown', false, style, short));
+		}
+
+		if (properties.pinlineRight) {
+			frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Crown', true, style, short));
+		}
+		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown", false, style, short));
+		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown Border Cover", false, style, short));
+	} else {
+		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Title Cutout", false, style, short));
+	}
+	if (properties.pt) {
+		frames.push(makeExtendedArtFrameByLetter(properties.pt, 'PT', false, style, short));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Pinline', true, style, short));
+	}
+	frames.push(makeExtendedArtFrameByLetter(properties.pinline, 'Pinline', false, style, short));
+	frames.push(makeExtendedArtFrameByLetter(properties.typeTitle, 'Type', false, style, short));
+	frames.push(makeExtendedArtFrameByLetter(properties.typeTitle, 'Title', false, style, short));
+	if (properties.pinlineRight) {
+		frames.push(makeExtendedArtFrameByLetter(properties.rulesRight, 'Rules', true, style, short));
+	}
+	frames.push(makeExtendedArtFrameByLetter(properties.rules, 'Rules', false, style, short));
+	if (properties.frameRight) {
+		frames.push(makeExtendedArtFrameByLetter(properties.frameRight, 'Frame', true, style, short));
+	}
+	frames.push(makeExtendedArtFrameByLetter(properties.frame, 'Frame', false, style, short));
+	frames.push(makeExtendedArtFrameByLetter(properties.frame, 'Border', false, style, short));
+
+	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
+		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
+	}
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoEtchedFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Etched');
+	var style = 'regular';
+	if (type_line.toLowerCase().includes('snow')) {
+		style = 'snow';
+	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
+		style = 'Nyx';
+	}
+
+	// Set frames
+
+	if (type_line.includes('Legendary')) {
+		if (style == 'Nyx') {
+			if (properties.frameRight) {
+				frames.push(makeEtchedFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
+			}
+			frames.push(makeEtchedFrameByLetter(properties.pinline, 'Inner Crown', false, style));
+		}
+
+		if (properties.frameRight) {
+			frames.push(makeEtchedFrameByLetter(properties.frameRight, 'Crown', true));
+		}
+		frames.push(makeEtchedFrameByLetter(properties.frame, "Crown", false));
+		frames.push(makeEtchedFrameByLetter(properties.frame, "Crown Border Cover", false));
+	}
+	if (properties.pt) {
+		frames.push(makeEtchedFrameByLetter(properties.pt, 'PT', false));
+	}
+	frames.push(makeEtchedFrameByLetter(properties.typeTitle, 'Type', false));
+	frames.push(makeEtchedFrameByLetter(properties.typeTitle, 'Title', false));
+	if (properties.pinlineRight) {
+		frames.push(makeEtchedFrameByLetter(properties.rulesRight, 'Rules', true));
+	}
+	frames.push(makeEtchedFrameByLetter(properties.rules, 'Rules', false));
+	if (properties.frameRight) {
+		frames.push(makeEtchedFrameByLetter(properties.frameRight, 'Frame', true, style));
+	}
+	frames.push(makeEtchedFrameByLetter(properties.frame, 'Frame', false, style));
+	frames.push(makeEtchedFrameByLetter(properties.frame, 'Border', false));
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoPhyrexianFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Phyrexian');
+
+	// Set frames
+
+	if (type_line.toLowerCase().includes('legendary')) {
+		if (properties.pinlineRight) {
+			frames.push(makePhyrexianFrameByLetter(properties.pinlineRight, 'Crown', true));
+		}
+		frames.push(makePhyrexianFrameByLetter(properties.pinline, "Crown", false));
+	}
+	if (properties.pt) {
+		frames.push(makePhyrexianFrameByLetter(properties.pt, 'PT', false));
+	}
+	if (properties.pinlineRight) {
+		frames.push(makePhyrexianFrameByLetter(properties.pinlineRight, 'Pinline', true));
+	}
+	frames.push(makePhyrexianFrameByLetter(properties.pinline, 'Pinline', false));
+	frames.push(makePhyrexianFrameByLetter(properties.typeTitle, 'Type', false));
+	frames.push(makePhyrexianFrameByLetter(properties.typeTitle, 'Title', false));
+	if (properties.pinlineRight) {
+		frames.push(makePhyrexianFrameByLetter(properties.rulesRight, 'Rules', true));
+	}
+	frames.push(makePhyrexianFrameByLetter(properties.rules, 'Rules', false));
+	if (properties.frameRight) {
+		frames.push(makePhyrexianFrameByLetter(properties.frameRight, 'Frame', true));
+	}
+	frames.push(makePhyrexianFrameByLetter(properties.frame, 'Frame', false));
+	frames.push(makePhyrexianFrameByLetter(properties.frame, 'Border', false));
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+async function autoSeventhEditionFrame(colors, mana_cost, type_line, power) {
+	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('DCI Star'));
+
+	//clear the draggable frames
+	card.frames = [];
+	document.querySelector('#frame-list').innerHTML = null;
+
+	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Seventh');
+
+	// Set frames
+	frames.push(makeSeventhEditionFrameByLetter(properties.pinline, 'Pinline', false));
+	if (properties.rulesRight) {
+		frames.push(makeSeventhEditionFrameByLetter(properties.rulesRight, 'Rules', true));
+	}
+	frames.push(makeSeventhEditionFrameByLetter(properties.rules, 'Rules', false));
+	frames.push(makeSeventhEditionFrameByLetter(properties.frame, 'Frame', false));
+	frames.push(makeSeventhEditionFrameByLetter(properties.pinline, 'Textbox Pinline', false));
+	frames.push(makeSeventhEditionFrameByLetter(properties.frame, 'Border', false));
+
+	card.frames = frames;
+	card.frames.reverse();
+	await card.frames.forEach(item => addFrame([], item));
+	card.frames.reverse();
+}
+function makeM15FrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
+	letter = letter.toUpperCase();
+	var frameNames = {
+		'W': 'White',
+		'U': 'Blue',
+		'B': 'Black',
+		'R': 'Red',
+		'G': 'Green',
+		'M': 'Multicolored',
+		'A': 'Artifact',
+		'L': 'Land',
+		'C': 'Colorless',
+		'V': 'Vehicle',
+		'WL': 'White Land',
+		'UL': 'Blue Land',
+		'BL': 'Black Land',
+		'RL': 'Red Land',
+		'GL': 'Green Land',
+		'ML': 'Multicolored Land'
+	}
+
+	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
+		letter = letter[0];
+	} else if (letter == 'L' && style == 'Nyx') {
+		style = 'regular'
+;	}
+
+	var frameName = frameNames[letter];
+
+	if (mask == "Crown Border Cover") {
+		return {
+			'name': 'Legend Crown Border Cover',
+			'src': '/img/black.png',
+			'masks': [],
+			'bounds': {
+				'height': 0.0177,
+				'width': 0.9214,
+				'x': 0.0394,
+				'y': 0.0277
+			}
+		}
+	}
+
+	if (mask == "Crown") {
+		var frame = {
+			'name': frameName + ' Legend Crown',
+			'src': '/img/frames/m15/crowns/m15Crown' + letter + '.png',
+			'masks': [],
+			'bounds': {
+				'height': 0.1667,
+				'width': 0.9454,
+				'x': 0.0274,
+				'y': 0.0191
+			}
+		}
+		if (maskToRightHalf) {
+			frame.masks.push({
+				'src': '/img/frames/maskRightHalf.png',
+				'name': 'Right Half'
+			});
+		}
+		return frame;
+	}
+
+	if (mask == "Inner Crown") {
+		var frame = {
+			'name': frameName + ' ' + mask + ' (' + style + ')',
+			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
+			'masks': [],
+			'bounds': {
+				'height': 0.0239,
+				'width': 0.672,
+				'x': 0.164,
+				'y': 0.0239
+			}
+		}
+		if (maskToRightHalf) {
+			frame.masks.push({
+				'src': '/img/frames/maskRightHalf.png',
+				'name': 'Right Half'
+			});
+		}
+		return frame;
+	}
+
+	if (mask == 'PT') {
+		return {
+			'name': frameName + ' Power/Toughness',
+			'src': '/img/frames/m15/regular/m15PT' + letter + '.png',
+			'masks': [],
+			'bounds': {
+				'height': 0.0733,
+				'width': 0.188,
+				'x': 0.7573,
+				'y': 0.8848
+			}
+		}
+	}
+
+	var frame = {
+		'name': frameName + ' Frame',
+		'src': '/img/frames/m15/' + style.toLowerCase() + '/m15Frame' + letter + '.png',
+	}
+
+	if (style == 'snow') {
+		frame.src = frame.src.replace('m15Frame' + letter, letter.toLowerCase());
+	} else {
+		if (letter.includes('L') && letter.length > 1) {
+			frame.src = frame.src.replace(('m15Frame' + letter), 'l' + letter[0].toLowerCase())
+		}
+
+		if (style == 'Nyx') {
+			frame.src = frame.src.replace('.png', 'Nyx.png');
+		}
+	}
+
+	if (mask) {
+		frame.masks = [
+			{
+				'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
+				'name': mask
+			}
+		]
+
+		if (maskToRightHalf) {
+			frame.masks.push({
+				'src': '/img/frames/maskRightHalf.png',
+				'name': 'Right Half'
+			});
+		}
+	} else {
+		frame.masks = [];
+	}
+
+	return frame;
+}
+
+function makeM15NewFrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
+	letter = letter.toUpperCase();
+	var frameNames = {
+		'W': 'White',
+		'U': 'Blue',
+		'B': 'Black',
+		'R': 'Red',
+		'G': 'Green',
+		'M': 'Multicolored',
+		'A': 'Artifact',
+		'L': 'Land',
+		'C': 'Colorless',
+		'V': 'Vehicle',
+		'WL': 'White Land',
+		'UL': 'Blue Land',
+		'BL': 'Black Land',
+		'RL': 'Red Land',
+		'GL': 'Green Land',
+		'ML': 'Multicolored Land',
+		'WE': 'White Enchantment',
+		'UE': 'Blue Enchantment',
+		'BE': 'Black Enchantment',
+		'RE': 'Red Enchantment',
+		'GE': 'Green Enchantment',
+		'ME': 'Multicolored Enchantment',
+		'AE': 'Artifact Enchantment'
+	}
+
+	if (style == 'ubnyx') {
+		letter += 'E'
+		if (mask == "Inner Crown") {
+			style = 'nyx';
+		} else {
+			style = 'ub';
+		}
+	}
+
+>>>>>>> Stashed changes
 	if (letter.length == 2) {
 		letter = letter.split("").reverse().join("");
 	}
 
+<<<<<<< Updated upstream
 	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
 		letter = letter[1];
 	}
 
 	var frameName = frameNames[letter];
+=======
+	if ((mask == 'Crown' || mask == 'PT' || mask.includes('Stamp')) && (letter.includes('L') || letter.includes('E')) && letter.length > 1) {
+		letter = letter[1];
+	}
+
+	var frameName = frameNames[letter.split("").reverse().join("")];
+>>>>>>> Stashed changes
 
 	if (mask == "Crown Border Cover") {
 		return {
@@ -1900,7 +2896,11 @@ function makeM15EighthFrameByLetter(letter, mask = false, maskToRightHalf = fals
 
 	return frame;
 }
+<<<<<<< Updated upstream
 function makeM15EighthUBFrameByLetter(letter, mask = false, maskToRightHalf = false) {
+=======
+function makeM15EighthUBFrameByLetter(letter, mask = false, maskToRightHalf = false, style = false) {
+>>>>>>> Stashed changes
 	letter = letter.toUpperCase();
 	var frameNames = {
 		'W': 'White',
@@ -1918,10 +2918,28 @@ function makeM15EighthUBFrameByLetter(letter, mask = false, maskToRightHalf = fa
 		'BL': 'Black Land',
 		'RL': 'Red Land',
 		'GL': 'Green Land',
+<<<<<<< Updated upstream
 		'ML': 'Multicolored Land'
 	}
 
 	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
+=======
+		'ML': 'Multicolored Land',
+		'WE': 'White Enchantment',
+		'UE': 'Blue Enchantment',
+		'BE': 'Black Enchantment',
+		'RE': 'Red Enchantment',
+		'GE': 'Green Enchantment',
+		'ME': 'Multicolored Enchantment',
+		'AE': 'Artifact Enchantment'
+	};
+
+	if (style == 'Nyx') {
+		letter = letter + 'E';
+	}
+
+	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && (letter.includes('L') || letter.includes('E')) && letter.length > 1) {
+>>>>>>> Stashed changes
 		letter = letter[0];
 	}
 
@@ -1965,7 +2983,11 @@ function makeM15EighthUBFrameByLetter(letter, mask = false, maskToRightHalf = fa
 	if (mask == "Inner Crown") {
 		var frame = {
 			'name': frameName + ' ' + mask + ' (' + style + ')',
+<<<<<<< Updated upstream
 			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
+=======
+			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + 'UB.png',
+>>>>>>> Stashed changes
 			'masks': [],
 			'bounds': {
 				'height': 0.0239,
@@ -2031,9 +3053,17 @@ function makeM15EighthUBFrameByLetter(letter, mask = false, maskToRightHalf = fa
 
 	return frame;
 }
+<<<<<<< Updated upstream
 function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = false, style) {
 	letter = letter.toUpperCase();
 
+=======
+function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = false, style, universesBeyond = false) {
+	letter = letter.toUpperCase();
+
+	var isVehicle = letter == 'V';
+
+>>>>>>> Stashed changes
 	if (letter == 'V') {
 		letter = 'A';
 	}
@@ -2092,9 +3122,19 @@ function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = fal
 	}
 
 	if (mask == "Crown") {
+<<<<<<< Updated upstream
 		var frame = {
 			'name': frameName + ' Legend Crown',
 			'src': '/img/frames/m15/crowns/m15Crown' + letter + 'Floating.png',
+=======
+		var src = '/img/frames/m15/crowns/m15Crown' + letter + 'Floating.png';
+		if (universesBeyond) {
+			src = '/img/frames/m15/ub/crowns/floating/' + letter + '.png';
+		}
+		var frame = { 
+			'name': frameName + ' Legend Crown',
+			'src': src,
+>>>>>>> Stashed changes
 			'masks': [],
 			'bounds': {
 				'height': 0.1024,
@@ -2136,7 +3176,11 @@ function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = fal
 	if (mask == 'PT') {
 		return {
 			'name': frameName + ' Power/Toughness',
+<<<<<<< Updated upstream
 			'src': '/img/frames/m15/borderless/pt/' + letter.toLowerCase() + '.png',
+=======
+			'src': '/img/frames/m15/borderless/pt/' + (isVehicle ? 'v' : letter.toLowerCase())+ '.png',
+>>>>>>> Stashed changes
 			'masks': [],
 			'bounds': {
 				'height': 0.066666666666,
@@ -2224,6 +3268,7 @@ function make8thEditionFrameByLetter(letter, mask = false, maskToRightHalf = fal
 			'name': frameName + ' Power/Toughness',
 			'src': '/img/frames/8th/pt/' + letter.toLowerCase() + '.png',
 			'masks': [],
+<<<<<<< Updated upstream
 			'bounds': {
 				'height': 0.0839,
 				'width': 0.2147,
@@ -2236,6 +3281,17 @@ function make8thEditionFrameByLetter(letter, mask = false, maskToRightHalf = fal
 	var frame = {
 		'name': frameName + ' Frame',
 		'src': '/img/frames/8th/' + letter.toLowerCase() + '.png',
+=======
+			'bounds': {x:1461/2010, y:2481/2814, width:414/2010, height:218/2814}
+		}
+	}
+
+	var stylePath = style == 'Nyx' ? 'nyx/' : '';
+
+	var frame = {
+		'name': frameName + ' Frame',
+		'src': '/img/frames/8th/' + stylePath + letter.toLowerCase() + '.png',
+>>>>>>> Stashed changes
 	}
 
 	if (letter.includes('L') && letter.length > 1) {
@@ -2250,10 +3306,13 @@ function make8thEditionFrameByLetter(letter, mask = false, maskToRightHalf = fal
 			}
 		]
 
+<<<<<<< Updated upstream
 		if (mask == 'Border') {
 			frame.masks[0].src = frame.masks[0].src.replace('.png', '.svg');
 		}
 
+=======
+>>>>>>> Stashed changes
 		if (maskToRightHalf) {
 			frame.masks.push({
 				'src': '/img/frames/maskRightHalf.png',
@@ -2460,7 +3519,11 @@ function makeExtendedArtFrameByLetter(letter, mask = false, maskToRightHalf = fa
 
 	return frame;
 }
+<<<<<<< Updated upstream
 function makeUBFrameByLetter(letter, mask = false, maskToRightHalf = false) {
+=======
+function makeUBFrameByLetter(letter, mask = false, maskToRightHalf = false, style = false) {
+>>>>>>> Stashed changes
 	letter = letter.toUpperCase();
 
 	if (letter == 'C') {
@@ -2483,10 +3546,28 @@ function makeUBFrameByLetter(letter, mask = false, maskToRightHalf = false) {
 		'BL': 'Black Land',
 		'RL': 'Red Land',
 		'GL': 'Green Land',
+<<<<<<< Updated upstream
 		'ML': 'Multicolored Land'
 	}
 
 	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
+=======
+		'ML': 'Multicolored Land',
+		'WE': 'White Enchantment',
+		'UE': 'Blue Enchantment',
+		'BE': 'Black Enchantment',
+		'RE': 'Red Enchantment',
+		'GE': 'Green Enchantment',
+		'ME': 'Multicolored Enchantment',
+		'AE': 'Artifact Enchantment'
+	};
+
+	if (style == 'Nyx') {
+		letter = letter + 'E';
+	}
+
+	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && (letter.includes('L') || letter.includes('E')) && letter.length > 1) {
+>>>>>>> Stashed changes
 		letter = letter[0];
 	}
 
@@ -2546,6 +3627,30 @@ function makeUBFrameByLetter(letter, mask = false, maskToRightHalf = false) {
 		return frame;
 	}
 
+<<<<<<< Updated upstream
+=======
+	if (mask == "Inner Crown") {
+		var frame = {
+			'name': frameName + ' ' + mask + ' (' + style + ')',
+			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + 'UB.png',
+			'masks': [],
+			'bounds': {
+				'height': 0.0239,
+				'width': 0.672,
+				'x': 0.164,
+				'y': 0.0239
+			}
+		}
+		if (maskToRightHalf) {
+			frame.masks.push({
+				'src': '/img/frames/maskRightHalf.png',
+				'name': 'Right Half'
+			});
+		}
+		return frame;
+	}
+
+>>>>>>> Stashed changes
 	if (mask == 'PT') {
 		return {
 			'name': frameName + ' Power/Toughness',
@@ -3315,7 +4420,7 @@ function loadTextOptions(textObject, replace=true) {
 function textOptionClicked(event) {
 	selectedTextIndex = getElementIndex(event.target);
 	document.querySelector('#text-editor').value = Object.entries(card.text)[selectedTextIndex][1].text;
-	document.querySelector('#text-editor-font-size').value = Object.entries(card.text)[selectedTextIndex][1].fontSize;
+	document.querySelector('#text-editor-font-size').value = Object.entries(card.text)[selectedTextIndex][1].fontSize || 0;
 	selectSelectable(event);
 }
 function textboxEditor() {
@@ -3365,6 +4470,10 @@ async function drawText() {
 	}
 }
 var justifyWidth = 90;
+<<<<<<< Updated upstream
+=======
+let manaSymbolsToRender = [];
+>>>>>>> Stashed changes
 function writeText(textObject, targetContext) {
 	//Most bits of info about text loaded, with defaults when needed
 	var textX = scaleX(textObject.x) || scaleX(0);
@@ -3537,6 +4646,11 @@ function writeText(textObject, targetContext) {
 			textOutlineWidth = 0;
 		}
 		lineContext.lineWidth = textOutlineWidth;
+<<<<<<< Updated upstream
+=======
+		lineContext.lineCap = textLineCap;
+		lineContext.lineJoin = textLineJoin;
+>>>>>>> Stashed changes
 		//Begin looping through words/codes
 		innerloop: for (word of splitText) {
 			var wordToWrite = word;
@@ -4089,6 +5203,20 @@ async function addTextbox(textboxType) {
 }
 //ART TAB
 function uploadArt(imageSource, otherParams) {
+<<<<<<< Updated upstream
+=======
+	art.onerror = function() {
+		notify('Failed to load image. Please try a different URL or upload the file directly.');
+	};
+	ImageLoadTracker.track(imageSource);
+	// Store original URL if it's a Google Drive link (before conversion to object URL)
+	if (typeof imageSource === 'string' && imageSource.includes('drive.google.com/file/d/')) {
+		art.originalSrc = imageSource;
+	} else if (typeof imageSource !== 'string' || !imageSource.startsWith('blob:')) {
+		// Clear originalSrc for non-Google Drive, non-blob URLs
+		delete art.originalSrc;
+	}
+>>>>>>> Stashed changes
 	art.src = imageSource;
 	if (otherParams && otherParams == 'autoFit') {
 		art.onload = function() {
@@ -4098,7 +5226,8 @@ function uploadArt(imageSource, otherParams) {
 	}
 }
 function artEdited() {
-	card.artSource = art.src;
+	// Use original Google Drive URL if available, otherwise use current src
+	card.artSource = art.originalSrc || art.src;
 	card.artX = document.querySelector('#art-x').value / card.width;
 	card.artY = document.querySelector('#art-y').value / card.height;
 	card.artZoom = document.querySelector('#art-zoom').value / 100;
@@ -4774,7 +5903,357 @@ function changeCardIndex() {
 	//text
 	var langFontCode = "";
 	if (cardToImport.lang == "ph") {langFontCode = "{fontphyrexian}"}
+<<<<<<< Updated upstream
 	var name = cardToImport.name || '';
+=======
+	// Handle Multi Faced Card Layouts
+	const multiFacedVersions = ['flip', 'split', 'fuse', 'aftermath', 'adventure', 'omen', 'room', 'battle', 'transform', 'modal'];
+	const isMultiFacedVersion = multiFacedVersions.some(keyword => card.version.toLowerCase().includes(keyword));
+	if (['flip', 'modal_dfc', 'transform', 'split', 'adventure'].includes(cardToImport.layout) && isMultiFacedVersion) {
+		const flipData = parseMultiFacedCards(cardToImport);
+		if (!flipData) {
+			console.error('Failed to parse Multi Faced card data');
+			return;
+		}
+	
+		// Add artist info
+		if (cardToImport.artist) {
+			artistEdited(cardToImport.artist);
+		}
+	
+		// Handle art loading 
+		if (cardToImport.image_uris?.art_crop) {
+			uploadArt(cardToImport.image_uris.art_crop, 'autoFit');
+		}
+	
+		// Handle set symbol
+		if (!document.querySelector('#lockSetSymbolCode').checked) {
+			document.querySelector('#set-symbol-code').value = cardToImport.set;
+			document.querySelector('#set-symbol-rarity').value = cardToImport.rarity.slice(0, 1);
+			if (!document.querySelector('#lockSetSymbolURL').checked) {
+			fetchSetSymbol();
+			}
+		}
+	
+		// Multi Faced card handling
+		// Update text fields based on card version
+		//Front Face (standard handling for all multi-faced cards)
+		if (card.text?.title && card.text?.mana) {
+			card.text.title.text = langFontCode + flipData.front.name;
+			card.text.type.text = langFontCode + flipData.front.type; 
+			card.text.rules.text = langFontCode + flipData.front.rules;
+			if (flipData.front.flavor) {
+				card.text.rules.text += '{flavor}' + curlyQuotes(flipData.front.flavor.replace('\n', '{lns}'));
+			}
+			card.text.mana.text = flipData.front.mana || '';
+			
+			// Handle PT vs Defense based on card version
+			if (card.version === 'battle') {
+				// For battles, only the defense field is unique
+				if (card.text.defense) {
+					card.text.defense.text = flipData.front.defense || '';
+				}
+			} else {
+				// For other multi-faced cards, use standard PT
+				if (card.text.pt) {
+					card.text.pt.text = flipData.front.pt || '';
+				}
+			}
+		}
+
+		// Handle MDFC cards separately (they use flipsideType and flipSideReminder)
+		if (cardToImport.layout === 'modal_dfc' && card.text?.flipsideType && card.text?.flipSideReminder) {
+			card.text.flipsideType.text = langFontCode + flipData.back.type;
+			card.text.flipSideReminder.text = langFontCode + flipData.back.rules;
+		}
+		//Back Face (standard handling for other multi-faced cards)
+		else if (card.text?.title2 && card.text?.mana2) {
+			card.text.title2.text = langFontCode + flipData.back.name;
+			// Skip importing back type for room cards AND battle cards
+			if (!cardToImport.type_line?.toLowerCase().includes('room')) {
+				card.text.type2.text = langFontCode + flipData.back.type;
+			}
+			card.text.rules2.text = langFontCode + flipData.back.rules;
+			if (flipData.back.flavor) {
+				card.text.rules2.text += '{flavor}' + curlyQuotes(flipData.back.flavor.replace('\n', '{lns}'));
+			}
+			card.text.mana2.text = flipData.back.mana || '';
+			if (card.text.pt2) {
+				card.text.pt2.text = flipData.back.pt || '';
+			}
+		}
+		
+		// Handle pt2 for battle and transform front faces (cards without title2/mana2)
+		if ((card.version === 'battle' || card.version.includes('transform') || card.version.includes('Transform')) && card.text?.pt2) {
+			card.text.pt2.text = flipData.back.pt || '';
+		}
+
+		if ((card.version.includes('transform') || card.version.includes('Transform')) && card.text?.reminder && flipData.back.pt) {
+			card.text.reminder.text = flipData.back.pt;
+		}
+	
+		textEdited();
+	}
+
+	// Handle Unique Layouts (Leveler, Prototype, Mutate, and Vanguard)
+	else if (['leveler', 'prototype', 'mutate', 'vanguard'].includes(cardToImport.layout) && ['leveler', 'prototype', 'mutate', 'vanguard'].includes(card.version)) {
+		let uniqueData;
+		
+		if (cardToImport.layout === 'leveler') {
+			uniqueData = parseLevelerCard(cardToImport);
+		} else if (cardToImport.layout === 'prototype') {
+			uniqueData = parsePrototypeLayout(cardToImport);
+		} else if (cardToImport.layout === 'mutate') {
+			uniqueData = parseMutateLayout(cardToImport);
+		} else if (cardToImport.layout === 'vanguard') {
+			uniqueData = parseVanguardLayout(cardToImport);
+		}
+
+		// Add artist info
+		if (cardToImport.artist) {
+			artistEdited(cardToImport.artist);
+		}
+
+		// Handle art loading 
+		if (cardToImport.image_uris?.art_crop) {
+			uploadArt(cardToImport.image_uris.art_crop, 'autoFit');
+		}
+
+		// Handle set symbol
+		if (!document.querySelector('#lockSetSymbolCode').checked) {
+			document.querySelector('#set-symbol-code').value = cardToImport.set;
+			document.querySelector('#set-symbol-rarity').value = cardToImport.rarity.slice(0, 1);
+			if (!document.querySelector('#lockSetSymbolURL').checked) {
+				fetchSetSymbol();
+			}
+		}
+
+		// Populate text fields based on layout
+		if (card.text?.title) {
+			card.text.title.text = langFontCode + uniqueData.name;
+			card.text.type.text = langFontCode + uniqueData.type;
+			card.text.mana.text = uniqueData.mana;
+			
+			// Base P/T
+			if (card.text.pt) {
+				card.text.pt.text = uniqueData.basePT;
+			}
+			
+			if (uniqueData.layout === 'leveler') {
+				card.text.levelup.text = langFontCode + uniqueData.levelUpText;
+				
+				// Level 1-2 data
+				if (uniqueData.levels[0]) {
+					const level1Data = uniqueData.levels[0];
+					if (card.text.level2) {
+						card.text.level2.text = `LEVEL\n{fontsize${scaleHeight(0.0162)}}${level1Data.range}`;
+					}
+					if (card.text.rules2) {
+						card.text.rules2.text = langFontCode + level1Data.rulesText;
+					}
+					if (card.text.pt2) {
+						card.text.pt2.text = level1Data.pt;
+					}
+				}
+				
+				// Level 3+ data
+				if (uniqueData.levels[1]) {
+					const level2Data = uniqueData.levels[1];
+					if (card.text.level3) {
+						card.text.level3.text = `LEVEL\n{fontsize${scaleHeight(0.0162)}}${level2Data.range}`;
+					}
+					if (card.text.rules3) {
+						card.text.rules3.text = langFontCode + level2Data.rulesText;
+					}
+					if (card.text.pt3) {
+						card.text.pt3.text = level2Data.pt;
+					}
+				}
+			} else if (uniqueData.layout === 'prototype') {
+				if (card.text.rules2) {
+					card.text.rules2.text = langFontCode + uniqueData.rules;
+				}
+				if (card.text.prototype) {
+					card.text.prototype.text = langFontCode + uniqueData.prototype.reminderText;
+				}
+				if (card.text.mana2) {
+					card.text.mana2.text = uniqueData.prototype.cost;
+				}
+				if (card.text.pt2) {
+					card.text.pt2.text = uniqueData.prototype.pt;
+				}
+			} else if (uniqueData.layout === 'mutate') {
+				if (card.text.rules2) {
+					card.text.rules2.text = langFontCode + uniqueData.rules;
+				}
+				if (card.text.mutate) {
+					card.text.mutate.text = langFontCode + uniqueData.mutate.reminderText;
+				}
+			} else if (uniqueData.layout === 'vanguard') {
+				if (card.text.ability) {
+					card.text.ability.text = langFontCode + uniqueData.rules;
+				}
+				if (card.text.flavor) {
+					card.text.flavor.text = langFontCode + uniqueData.flavor;
+				}
+				if (card.text.leftval) {
+					card.text.leftval.text = uniqueData.handModifier;
+				}
+				if (card.text.rightval) {
+					card.text.rightval.text = uniqueData.lifeModifier;
+				}
+			}
+		}
+
+		textEdited();
+	}
+
+else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('Station') && card.version.includes('station')) {
+
+	// Clear existing station fields
+	if (card.text) {
+		['ability0', 'ability1', 'ability2'].forEach(field => {
+			if (card.text[field]) card.text[field].text = '';
+		});
+	}
+	
+	// Clear station badge values immediately
+	if (card.station?.badgeValues) {
+		card.station.badgeValues[1] = '';
+		card.station.badgeValues[2] = '';
+	}
+	
+	const stationData = parseStationCard(cardToImport.oracle_text);
+	const name = (cardToImport.printed_name || cardToImport.name || '').replace(/^A-/, '{alchemy}');
+
+	// Populate basic text fields
+	const basicFields = [
+		['title', curlyQuotes(name)],
+		['type', cardToImport.type_line],
+		['mana', cardToImport.mana_cost || ''],
+		['pt', cardToImport.power && cardToImport.toughness ? `${cardToImport.power}/${cardToImport.toughness}` : '']
+	];
+	
+	basicFields.forEach(([field, value]) => {
+		if (card.text?.[field]) card.text[field].text = langFontCode + value;
+	});
+	
+	// Station ability placement logic
+	if (stationData) {
+		// Better regex to separate pre-text from Station reminder text
+		let preText = '';
+		let reminderText = '';
+		
+		if (stationData.preStationText) {
+			// Look for Station reminder text (either already italicized or not)
+			const stationReminderMatch = stationData.preStationText.match(/(.*?)(Station \{i\}\([^)]+\)\{\/i\}|Station \([^)]+\))/s);
+			
+			if (stationReminderMatch) {
+				preText = stationReminderMatch[1].trim();
+				
+				// Format the reminder text with italics if not already done
+				if (stationReminderMatch[2].includes('{i}')) {
+					reminderText = stationReminderMatch[2];
+				} else {
+					reminderText = stationReminderMatch[2].replace(/Station (\([^)]+\))/, 'Station {i}$1{/i}');
+				}
+			} else {
+				// If no Station reminder found, treat entire text as pre-text
+				preText = stationData.preStationText.trim();
+			}
+		}
+		
+		const numAbilities = stationData.stationAbilities.length;
+		
+		// AUTO-CHECK DISABLE FIRST SQUARE FOR SINGLE ABILITIES
+		const shouldDisableFirstSquare = numAbilities === 1;
+		
+		// Define placement scenarios as configuration
+		const scenarios = {
+			// [hasPreText, numAbilities]: [ability0, ability1, ability2, badgeSlots]
+			[false + ',' + 1]: ['', reminderText, stationData.stationAbilities[0]?.text, [null, stationData.stationAbilities[0]?.number]],
+			[true + ',' + 1]: [preText, reminderText, stationData.stationAbilities[0]?.text, [null, stationData.stationAbilities[0]?.number]],
+			[false + ',' + 2]: [reminderText, stationData.stationAbilities[0]?.text, stationData.stationAbilities[1]?.text, [stationData.stationAbilities[0]?.number, stationData.stationAbilities[1]?.number]],
+			[true + ',' + 2]: [preText + (reminderText ? '\n' + reminderText : ''), stationData.stationAbilities[0]?.text, stationData.stationAbilities[1]?.text, [stationData.stationAbilities[0]?.number, stationData.stationAbilities[1]?.number]]
+		};
+		
+		const scenario = scenarios[Boolean(preText) + ',' + numAbilities];
+		if (scenario) {
+			const [ability0, ability1, ability2, badges] = scenario;
+			
+			// Set abilities
+			[ability0, ability1, ability2].forEach((text, i) => {
+				if (text && card.text[`ability${i}`]) {
+					card.text[`ability${i}`].text = langFontCode + text;
+				}
+			});
+			
+			// Set disable first square checkbox and station setting
+			setTimeout(() => {
+				const disableCheckbox = document.querySelector('#station-disable-first-ability');
+				if (disableCheckbox) {
+					disableCheckbox.checked = shouldDisableFirstSquare;
+				}
+				if (card.station) {
+					card.station.disableFirstAbility = shouldDisableFirstSquare;
+				}
+				
+				// SET STATION-SPECIFIC UI VALUES FOR SINGLE ABILITY IMPORTS
+				if (shouldDisableFirstSquare && !Boolean(preText) && card.station?.importSettings?.singleAbility) {
+					// Get version-specific settings or fall back to default
+					const versionOverrides = card.station.importSettings.versionOverrides || {};
+					const versionSettings = versionOverrides[card.version] || card.station.importSettings.singleAbility;
+					
+					// Set Y offset
+					const yOffsetInput = document.querySelector('#station-square-y');
+					if (yOffsetInput) {
+						yOffsetInput.value = versionSettings.yOffset;
+						if (card.station.squares && card.station.squares[1]) {
+							card.station.squares[1].y = versionSettings.yOffset + 76;
+						}
+					}
+					
+					// Set first square height
+					const height1Input = document.querySelector('#station-square-height-1');
+					if (height1Input) {
+						height1Input.value = versionSettings.height1;
+						if (card.station.squares && card.station.squares[1]) {
+							card.station.squares[1].height = versionSettings.height1;
+						}
+					}
+				}
+		
+				
+				// Clear DOM inputs first
+				['#station-badge-value-1', '#station-badge-value-2'].forEach(selector => {
+					const input = document.querySelector(selector);
+					if (input) input.value = '';
+				});
+				
+				// Set new badge values
+				badges.forEach((badge, i) => {
+					if (badge) {
+						const input = document.querySelector(`#station-badge-value-${i + 1}`);
+						if (input) input.value = badge;
+						if (card.station?.badgeValues) card.station.badgeValues[i + 1] = badge;
+					}
+				});
+				
+				// Force station redraw after all values are set
+				setTimeout(() => {
+					if (typeof stationEdited === 'function') {
+						stationEdited();
+					}
+				}, 50);
+			}, 100);
+		}
+	}
+	
+	textEdited();
+}
+
+	var name = cardToImport.printed_name || cardToImport.name || '';
+>>>>>>> Stashed changes
 	if (name.startsWith('A-')) { name = name.replace('A-', '{alchemy}'); }
 
 	if (card.text.title) {
@@ -5081,7 +6560,7 @@ async function loadCard(selectedCardKey) {
 		document.querySelector('#art-y').value = scaleY(card.artY) - scaleHeight(card.marginY);
 		document.querySelector('#art-zoom').value = card.artZoom * 100;
 		document.querySelector('#art-rotate').value = card.artRotate || 0;
-		uploadArt(card.artSource);
+		imageURL(card.artSource, uploadArt);
 		document.querySelector('#setSymbol-x').value = scaleX(card.setSymbolX) - scaleWidth(card.marginX);
 		document.querySelector('#setSymbol-y').value = scaleY(card.setSymbolY) - scaleHeight(card.marginY);
 		document.querySelector('#setSymbol-zoom').value = card.setSymbolZoom * 100;
@@ -5094,11 +6573,11 @@ async function loadCard(selectedCardKey) {
 		document.querySelector('#watermark-opacity').value = card.watermarkOpacity * 100;
 		document.getElementById("rounded-corners").checked = !card.noCorners;
 		uploadWatermark(card.watermarkSource);
-		document.querySelector('#serial-number').value = card.serialNumber;
-		document.querySelector('#serial-total').value = card.serialTotal;
-		document.querySelector('#serial-x').value = card.serialX;
-		document.querySelector('#serial-y').value = card.serialY;
-		document.querySelector('#serial-scale').value = card.serialScale;
+		document.querySelector('#serial-number').value = card.serialNumber || '';
+		document.querySelector('#serial-total').value = card.serialTotal || '';
+		document.querySelector('#serial-x').value = card.serialX || 0;
+		document.querySelector('#serial-y').value = card.serialY || 0;
+		document.querySelector('#serial-scale').value = card.serialScale || 1;
 		serialInfoEdited();
 
 		card.frames.reverse();
@@ -5251,16 +6730,88 @@ function setRoundedCorners(value) {
 	drawCard();
 }
 //Various loaders
-function imageURL(url, destination, otherParams) {
+async function imageURL(url, destination, otherParams) {
 	var imageurl = url;
 	// If an image URL does not have HTTP in it, assume it's a local file in the repo local_art directory.
 	if (!url.includes('http')) {
 		imageurl = '/local_art/' + url;
+<<<<<<< Updated upstream
 	} else if (params.get('noproxy') != '') {
 		//CORS PROXY LINKS
 		//Previously: https://cors.bridged.cc/
 		imageurl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+=======
+		destination(imageurl, otherParams);
+		return;
+>>>>>>> Stashed changes
 	}
+	
+	// Handle Google Drive sharing links with Google Apps Script
+	if (url.includes('drive.google.com/file/d/')) {
+		const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+		if (match && match[1]) {
+			const scriptUrl = `https://script.google.com/macros/s/AKfycbw8laScKBfxda2Wb0g63gkYDBdy8NWNxINoC4xDOwnCQ3JMFdruam1MdmNmN4wI5k4/exec?id=${match[1]}`;
+			
+			notify('Attempting to load Google Drive image. Max size 27MB. Can take awhile if the image is large...');
+			
+			try {
+				const response = await fetch(scriptUrl);
+				const base64Text = await response.text();
+				
+				if (!response.ok) {
+					console.error('Google Drive script error:', response.status, base64Text);
+					throw new Error(`Script returned status ${response.status}: ${base64Text}`);
+				}
+				
+				// Dismiss the "Attempting to load" notification
+				const existingNotifications = document.querySelectorAll('.notification');
+				existingNotifications.forEach(n => {
+					const closeBtn = n.querySelector('h3');
+					if (closeBtn) closeBtn.click();
+				});
+				
+				notify('Image Now Loading', 5);
+				
+				// Detect MIME type from Base64 signature
+				let mimeType = 'image/png';
+				if (base64Text.startsWith('/9j/')) {
+					mimeType = 'image/jpeg';
+				} else if (base64Text.startsWith('UklGRiI')) {
+					mimeType = 'image/webp';
+				}
+				
+				// Convert Base64 to Blob
+				const byteCharacters = atob(base64Text);
+				const byteNumbers = new Array(byteCharacters.length);
+				for (let i = 0; i < byteCharacters.length; i++) {
+					byteNumbers[i] = byteCharacters.charCodeAt(i);
+				}
+				const byteArray = new Uint8Array(byteNumbers);
+				const blob = new Blob([byteArray], { type: mimeType });
+				
+				// Create object URL and pass it to destination
+				const objectURL = URL.createObjectURL(blob);
+				// Store the original Google Drive URL for saving
+				destination(url, otherParams);
+				// Then set the object URL to display the image
+				art.src = objectURL;
+			} catch (error) {
+				console.error('Failed to load Google Drive image:', error);
+				
+				// Dismiss the "Attempting to load" notification
+				const existingNotifications = document.querySelectorAll('.notification');
+				existingNotifications.forEach(n => {
+					const closeBtn = n.querySelector('h3');
+					if (closeBtn) closeBtn.click();
+				});
+				
+				notify('Failed to load Google Drive image. Please try a different URL.');
+				destination('/img/blank.png', otherParams);
+			}
+			return;
+		}
+	}
+	
 	destination(imageurl, otherParams);
 }
 async function imageLocal(event, destination, otherParams) {

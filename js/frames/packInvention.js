@@ -1,5 +1,5 @@
 //Create objects for common properties across available frames
-var masks = [{src:'/img/frames/m15/regular/m15MaskPinline.png', name:'Pinline'}, {src:'/img/frames/m15/regular/m15MaskTitle.png', name:'Title'}, {src:'/img/frames/m15/regular/m15MaskType.png', name:'Type'}, {src:'/img/frames/m15/regular/m15MaskRules.png', name:'Rules'}, {src:'/img/frames/m15/regular/m15MaskFrame.png', name:'Frame'}, {src:'/img/frames/m15/regular/m15MaskBorder.png', name:'Border'}];
+var masks = [{src:'/img/frames/m15/invention/maskKaladeshDark.png', name:'Kaladesh Dark'}, {src:'/img/frames/m15/regular/m15MaskPinline.png', name:'Pinline'}, {src:'/img/frames/m15/invention/maskTitle.png', name:'Title'}, {src:'/img/frames/m15/invention/maskType.png', name:'Type'}, {src:'/img/frames/m15/regular/m15MaskRules.png', name:'Rules'}, {src:'/img/frames/m15/regular/m15MaskFrame.png', name:'Frame'}, {src:'/img/frames/m15/regular/m15MaskBorder.png', name:'Border'}];
 var bounds = {x:0.7573, y:0.8848, width:0.188, height:0.0733};
 //defines available frames
 availableFrames = [
@@ -17,6 +17,7 @@ availableFrames = [
 	{name:'Original Invention Frame', src:'/img/frames/m15/invention/inventionFrameA.png', masks:masks},
 	{name:'Silver Frame', src:'/img/frames/m15/invention/a.png', masks:masks},
 	{name:'Silver Power/Toughness', src:'/img/frames/m15/invention/apt.png', bounds:bounds},
+	{name:'Vehicle Frame', src:'/img/frames/m15/invention/vehicle.png', masks:masks},
 	{name:'Phyrexian Frame', src:'/img/frames/m15/invention/phyrexian.png', masks:masks},
 	{name:'Phyrexian Power/Toughness', src:'/img/frames/m15/invention/phyrexianPT.png', bounds:bounds},
 	{name:'Darksteel Frame', src:'/img/frames/m15/invention/darksteel.png', masks:masks},
