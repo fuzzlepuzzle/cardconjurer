@@ -145,7 +145,7 @@ window.FontLoadTracker = {
 };
 
 //card object
-var card = {width:getStandardWidth(), height:getStandardHeight(), marginX:0, marginY:0, frames:[], artSource:fixUri('/img/blank.png'), artX:0, artY:0, artZoom:1, artRotate:0, setSymbolSource:fixUri('/img/blank.png'), setSymbolX:0, setSymbolY:0, setSymbolZoom:1, setSymbolRotate:0, watermarkSource:fixUri('/img/blank.png'), watermarkX:0, watermarkY:0, watermarkZoom:1, watermarkLeft:'none', watermarkRight:'none', watermarkOpacity:0.4, version:'', manaSymbols:[]};
+var card = {width:getStandardWidth(), height:getStandardHeight(), marginX:0, marginY:0, frames:[], artSource:fixUri('/img/blank.png'), artX:0, artY:0, artZoom:1, artRotate:0, setSymbolSource:fixUri('/img/blank.png'), setSymbolX:0, setSymbolY:0, setSymbolZoom:1, watermarkSource:fixUri('/img/blank.png'), watermarkX:0, watermarkY:0, watermarkZoom:1, watermarkLeft:'none', watermarkRight:'none', watermarkOpacity:0.4, version:'', manaSymbols:[]};
 window.cardDrawingPromiseResolver = null;
 //core images/masks
 const black = new Image(); black.crossOrigin = 'anonymous'; black.src = fixUri('/img/black.png');
@@ -407,24 +407,6 @@ function dragOver(event, drag=true) {
 			var originalMovingElement = card.frames[movingElementOldIndex];
 			card.frames.splice(movingElementOldIndex, 1);
 			card.frames.splice(movingElementNewIndex, 0, originalMovingElement);
-			
-			// Update preserveAlpha for frames that support it based on their new positions
-			card.frames.forEach((frame, index) => {
-				// Only update frames that were defined with preserveAlpha support
-				if (frame.supportsPreserveAlpha) {
-					// If frame is at the bottom (last index), disable preserveAlpha
-					if (index === card.frames.length - 1) {
-						delete frame.preserveAlpha;
-					} else {
-						// If frame is not at the bottom, enable preserveAlpha
-						frame.preserveAlpha = true;
-					}
-				}
-			});
-			
-			// Update all frame labels to reflect the new preserveAlpha states
-			updateAllFrameLabels();
-			
 			drawFrames();
 		}
 	}
@@ -443,18 +425,17 @@ loadManaSymbols(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '
 loadManaSymbols(true, ['e', 'a', 'p']);
 loadManaSymbols(['wu', 'wb', 'ub', 'ur', 'br', 'bg', 'rg', 'rw', 'gw', 'gu', '2w', '2u', '2b', '2r', '2g', 'wp', 'up', 'bp', 'rp', 'gp', 'h',
 				 'wup', 'wbp', 'ubp', 'urp', 'brp', 'bgp', 'rgp', 'rwp', 'gwp', 'gup', 'purplew', 'purpleu', 'purpleb', 'purpler', 'purpleg',
-				 '2purple', 'purplep', 'cw', 'cu', 'cb', 'cr', 'cg'], [1.2, 1.2, 0.03]);
+				 '2purple', 'purplep', 'cw', 'cu', 'cb', 'cr', 'cg'], [1.2, 1.2]);
 loadManaSymbols(['bar.png', 'whitebar.png']);
 loadManaSymbols(['brush', 'whitebrush'], [2.85, 2.85]);
-loadManaSymbols(['xxbgw', 'xxbrg', 'xxgub', 'xxgwu', 'xxrgw', 'xxrwu', 'xxubr', 'xxurg', 'xxwbr', 'xxwub'], [1.2, 1.2, 0.03]);
+loadManaSymbols(['xxbgw', 'xxbrg', 'xxgub', 'xxgwu', 'xxrgw', 'xxrwu', 'xxubr', 'xxurg', 'xxwbr', 'xxwub'], [1.2, 1.2]);
 loadManaSymbols(true, ['chaos'], [1.2, 1]);
 loadManaSymbols(true, ['tk'], [0.8, 1]);
 loadManaSymbols(true, ['planeswalker'], [0.6, 1.2]);
 loadManaSymbols(true, ['+1', '+2', '+3', '+4', '+5', '+6', '+7', '+8', '+9', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '+0'], [1.6, 1]);
-function loadManaSymbols(matchColor, manaSymbolPaths, size = [1, 1], spacing = 1) {
+function loadManaSymbols(matchColor, manaSymbolPaths, size = [1, 1]) {
 	if (typeof matchColor === 'object') {
 		// Hacky way to add a default argument for matchColor without breaking the function call from other places
-		spacing = size || 1;
 		size = manaSymbolPaths || [1,1];
 		manaSymbolPaths = matchColor;
 		matchColor = false;
@@ -485,8 +466,6 @@ function loadManaSymbols(matchColor, manaSymbolPaths, size = [1, 1], spacing = 1
 
 		manaSymbol.width = size[0];
 		manaSymbol.height = size[1];
-		manaSymbol.yOffset = size[2] || 0;
-		manaSymbol.spacing = spacing;
 		manaSymbol.image = new Image();
 		manaSymbol.image.crossOrigin = 'anonymous';
 		var manaSymbolPath = '/img/manaSymbols/' + manaSymbol.path;
@@ -883,3339 +862,10 @@ function setAutoframeNyx(value) {
 
 var autoFramePack;
 
-	var colors = [];
-	if (card.text.type.text.toLowerCase().includes('land')) {
-		var rules = card.text.rules.text;
-		var flavorIndex = rules.indexOf('{flavor}');
-		if (flavorIndex == -1) {
-			flavorIndex = rules.indexOf('{oldflavor}');
-		}
-		if (flavorIndex != -1) {
-			rules = rules.substring(0, flavorIndex);
-		}
-
-		var lines = rules.split('\n');
-
-		lines.forEach(function(line) {
-			var addIndex = line.indexOf('Add');
-			var length = 3;
-			if (addIndex == -1) {
-				addIndex = line.toLowerCase().indexOf(' add');
-				length = 4;
-			}
-			if (addIndex != -1) {
-				var upToAdd = line.substring(addIndex+length).toLowerCase();
-              	['W', 'U', 'B', 'R', 'G'].forEach(function (color) {
-					if (upToAdd.includes('{' + color.toLowerCase() + '}')) {
-                  		colors.push(color);
-                	}
-                });
-			}
-		});
-
-		if (!colors.includes('W') && (rules.toLowerCase().includes('plains') || card.text.type.text.toLowerCase().includes('plains'))) {
-			colors.push('W');
-		}
-		if (!colors.includes('U') && (rules.toLowerCase().includes('island') || card.text.type.text.toLowerCase().includes('island'))) {
-			colors.push('U');
-		}
-		if (!colors.includes('B') && (rules.toLowerCase().includes('swamp') || card.text.type.text.toLowerCase().includes('swamp'))) {
-			colors.push('B');
-		}
-		if (!colors.includes('R') && (rules.toLowerCase().includes('mountain') || card.text.type.text.toLowerCase().includes('mountain'))) {
-			colors.push('R');
-		}
-		if (!colors.includes('G') && (rules.toLowerCase().includes('forest') || card.text.type.text.toLowerCase().includes('forest'))) {
-			colors.push('G');
-		}
-
-		if (rules.toLowerCase().includes('search') && colors.length == 0) {
-			// TODO: This doesn't match Bog Wreckage
-			if (rules.includes('into your hand') || (rules.includes('tapped') && !(rules.toLowerCase().includes('enters the battlefield tapped')) && !(rules.toLowerCase().includes('untap')))) {
-				colors = [];
-			} else if (colors.length == 0) {
-				colors = ['W', 'U', 'B', 'R', 'G'];
-			}
-		}
-
-		if (rules.includes('any color') || rules.includes('any one color') || rules.includes('choose a color') || rules.includes('any combination of colors')) {
-			colors = ['W', 'U', 'B', 'R', 'G'];
-		}
-
-
-	} else {
-		colors = [...new Set(card.text.mana.text.toUpperCase().split('').filter(char => ['W', 'U', 'B', 'R', 'G'].includes(char)))];
-	}
-
-	var group;
-	if (frame == 'M15Regular-1') {
-		autoM15Frame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Standard-3';
-	} else if (frame == 'M15RegularNew') {
-		autoM15NewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Accurate';
-	} else if (frame == 'M15Eighth') {
-		autoM15EighthFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Custom';
-	} else if (frame == 'M15EighthUB') {
-		autoM15EighthUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Custom';
-	} else if (frame == 'UB') {
-		autoUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Showcase-5';
-	} else if (frame == 'UBNew') {
-		autoUBNewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Accurate';
-	} else if (frame == 'FullArtNew') {
-		autoFullArtNewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Accurate';
-	} else if (frame == 'Circuit') {
-		autoCircuitFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Custom';
-	} else if (frame == 'Etched') {
-		group = 'Showcase-5';
-		autoEtchedFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'Praetors') {
-		group = 'Showcase-5';
-		autoPhyrexianFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'Seventh') {
-		group = 'Misc-2';
-		autoSeventhEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'M15BoxTopper') {
-		group = 'Showcase-5';
-		autoExtendedArtFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, false);
-	} else if (frame == 'M15ExtendedArtShort') {
-		group = 'Showcase-5';
-		autoExtendedArtFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, true);
-	} else if (frame == '8th') {
-		group = 'Misc-2';
-		auto8thEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'Borderless') {
-		group = 'Showcase-5';
-		autoBorderlessFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'BorderlessUB') {
-		group = 'Showcase-5';
-		autoBorderlessUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		frame = 'Borderless';
-	}
-
-	if (autoFramePack != frame) {
-		loadScript('/js/frames/pack' + frame + '.js');
-		autoFramePack = frame;
-	}
-
-async function autoUBFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-
-	var style = false;
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-
-	if (type_line.toLowerCase().includes('legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeUBFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeUBFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.pinline, "Stamp", false, style));
-	if (properties.pt) {
-		frames.push(makeUBFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeUBFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeUBFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeUBFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeUBFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoUBNewFrame(colors, mana_cost, type_line, power) {
-	autoM15NewFrame(colors, mana_cost, type_line, power, 'ub');
-}
-async function autoFullArtNewFrame(colors, mana_cost, type_line, power) {
-	autoM15NewFrame(colors, mana_cost, type_line, power, 'fullart');
-}
-async function autoCircuitFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-
-	// Set frames
-
-	if (type_line.toLowerCase().includes('legendary')) {
-		if (properties.pinlineRight) {
-			frames.push(makeCircuitFrameByLetter(properties.pinlineRight, 'Crown', true));
-		}
-		frames.push(makeCircuitFrameByLetter(properties.pinline, "Crown", false));
-		frames.push(makeCircuitFrameByLetter(properties.pinline, "Crown Border Cover", false));
-	}
-	if (properties.pt) {
-		frames.push(makeCircuitFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeCircuitFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makeCircuitFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makeCircuitFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeCircuitFrameByLetter(properties.typeTitle, 'Title', false));
-	if (properties.pinlineRight) {
-		frames.push(makeCircuitFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makeCircuitFrameByLetter(properties.rules, 'Rules', false));
-	if (properties.frameRight) {
-		frames.push(makeCircuitFrameByLetter(properties.frameRight, 'Frame', true));
-	}
-	frames.push(makeCircuitFrameByLetter(properties.frame, 'Frame', false));
-	frames.push(makeCircuitFrameByLetter(properties.frame, 'Border', false));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15Frame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pt) {
-		frames.push(makeM15FrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15FrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15FrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15FrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15FrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15FrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15FrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15FrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15FrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15NewFrame(colors, mana_cost, type_line, power, style = 'regular') {
-	var frames;
-	if (style == 'ub') {
-		frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp'));
-	} else {
-		frames = card.frames.filter(frame => frame.name.includes('Extension'));
-	}
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	if (style == 'ub') {
-		if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-			style = 'ubnyx';
-		}
-	} else if (style != 'fullart') {
-	 	if (type_line.toLowerCase().includes('snow')) {
-			style = 'snow';
-		} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-			style = 'Nyx';
-		}
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx' || style == 'ubnyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-
-			frames.push(makeM15NewFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15NewFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15NewFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-
-	if (style == 'ub' || style == 'ubnyx') {
-		if (properties.pinlineRight) {
-			frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
-		}
-		frames.push(makeM15NewFrameByLetter(properties.pinline, "Stamp", false, style));
-	}
-
-	if (properties.pt) {
-		frames.push(makeM15NewFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15NewFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15NewFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15NewFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15NewFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15NewFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15NewFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15NewFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15NewFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15EighthFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pt) {
-		frames.push(makeM15EighthFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15EighthFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15EighthFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15EighthFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15EighthFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15EighthFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15EighthFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15EighthFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15EighthUBFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeM15EighthUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15EighthUBFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15EighthUBFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pt) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15EighthUBFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15EighthUBFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15EighthUBFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15EighthUBFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15EighthUBFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15EighthUBFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoBorderlessFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Borderless');
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
-			}
-			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Legend Crown Outline", false))
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown Border Cover", false));
-	}
-	if (properties.pt) {
-		frames.push(makeBorderlessFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makeBorderlessFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Title', false));
-	frames.push(makeBorderlessFrameByLetter(properties.rules, 'Rules', false));
-	frames.push(makeBorderlessFrameByLetter(properties.frame, 'Border', false));
-
-	// if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-	// 	card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	// }
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoBorderlessUBFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Borderless');
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
-			}
-			frames.push(makeUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Crown', true, style, true));
-		}
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown", false, style, true));
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Legend Crown Outline", false))
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown Border Cover", false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.pinline, "Stamp", false, style));
-	if (properties.pt) {
-		frames.push(makeBorderlessFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makeBorderlessFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Title', false));
-	frames.push(makeBorderlessFrameByLetter(properties.rules, 'Rules', false));
-	frames.push(makeBorderlessFrameByLetter(properties.frame, 'Border', false));
-
-	// if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-	// 	card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	// }
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function auto8thEditionFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (properties.pt) {
-		frames.push(make8thEditionFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(make8thEditionFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(make8thEditionFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(make8thEditionFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(make8thEditionFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(make8thEditionFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(make8thEditionFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(make8thEditionFrameByLetter(properties.frame, 'Border', false, style));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoExtendedArtFrame(colors, mana_cost, type_line, power, short) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown Outline", false, style, short));
-
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style, short));
-			}
-			frames.push(makeExtendedArtFrameByLetter(properties.pinline, 'Inner Crown', false, style, short));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Crown', true, style, short));
-		}
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown", false, style, short));
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown Border Cover", false, style, short));
-	} else {
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Title Cutout", false, style, short));
-	}
-	if (properties.pt) {
-		frames.push(makeExtendedArtFrameByLetter(properties.pt, 'PT', false, style, short));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Pinline', true, style, short));
-	}
-	frames.push(makeExtendedArtFrameByLetter(properties.pinline, 'Pinline', false, style, short));
-	frames.push(makeExtendedArtFrameByLetter(properties.typeTitle, 'Type', false, style, short));
-	frames.push(makeExtendedArtFrameByLetter(properties.typeTitle, 'Title', false, style, short));
-	if (properties.pinlineRight) {
-		frames.push(makeExtendedArtFrameByLetter(properties.rulesRight, 'Rules', true, style, short));
-	}
-	frames.push(makeExtendedArtFrameByLetter(properties.rules, 'Rules', false, style, short));
-	if (properties.frameRight) {
-		frames.push(makeExtendedArtFrameByLetter(properties.frameRight, 'Frame', true, style, short));
-	}
-	frames.push(makeExtendedArtFrameByLetter(properties.frame, 'Frame', false, style, short));
-	frames.push(makeExtendedArtFrameByLetter(properties.frame, 'Border', false, style, short));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoEtchedFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Etched');
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.frameRight) {
-				frames.push(makeEtchedFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
-			}
-			frames.push(makeEtchedFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.frameRight) {
-			frames.push(makeEtchedFrameByLetter(properties.frameRight, 'Crown', true));
-		}
-		frames.push(makeEtchedFrameByLetter(properties.frame, "Crown", false));
-		frames.push(makeEtchedFrameByLetter(properties.frame, "Crown Border Cover", false));
-	}
-	if (properties.pt) {
-		frames.push(makeEtchedFrameByLetter(properties.pt, 'PT', false));
-	}
-	frames.push(makeEtchedFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeEtchedFrameByLetter(properties.typeTitle, 'Title', false));
-	if (properties.pinlineRight) {
-		frames.push(makeEtchedFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makeEtchedFrameByLetter(properties.rules, 'Rules', false));
-	if (properties.frameRight) {
-		frames.push(makeEtchedFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeEtchedFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeEtchedFrameByLetter(properties.frame, 'Border', false));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoPhyrexianFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Phyrexian');
-
-	// Set frames
-
-	if (type_line.toLowerCase().includes('legendary')) {
-		if (properties.pinlineRight) {
-			frames.push(makePhyrexianFrameByLetter(properties.pinlineRight, 'Crown', true));
-		}
-		frames.push(makePhyrexianFrameByLetter(properties.pinline, "Crown", false));
-	}
-	if (properties.pt) {
-		frames.push(makePhyrexianFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makePhyrexianFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makePhyrexianFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makePhyrexianFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makePhyrexianFrameByLetter(properties.typeTitle, 'Title', false));
-	if (properties.pinlineRight) {
-		frames.push(makePhyrexianFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makePhyrexianFrameByLetter(properties.rules, 'Rules', false));
-	if (properties.frameRight) {
-		frames.push(makePhyrexianFrameByLetter(properties.frameRight, 'Frame', true));
-	}
-	frames.push(makePhyrexianFrameByLetter(properties.frame, 'Frame', false));
-	frames.push(makePhyrexianFrameByLetter(properties.frame, 'Border', false));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoSeventhEditionFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('DCI Star'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Seventh');
-
-	// Set frames
-	frames.push(makeSeventhEditionFrameByLetter(properties.pinline, 'Pinline', false));
-	if (properties.rulesRight) {
-		frames.push(makeSeventhEditionFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makeSeventhEditionFrameByLetter(properties.rules, 'Rules', false));
-	frames.push(makeSeventhEditionFrameByLetter(properties.frame, 'Frame', false));
-	frames.push(makeSeventhEditionFrameByLetter(properties.pinline, 'Textbox Pinline', false));
-	frames.push(makeSeventhEditionFrameByLetter(properties.frame, 'Border', false));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-function makeM15FrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	} else if (letter == 'L' && style == 'Nyx') {
-		style = 'regular'
-;	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/crowns/m15Crown' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1667,
-				'width': 0.9454,
-				'x': 0.0274,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/regular/m15PT' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 0.8848
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/m15/' + style.toLowerCase() + '/m15Frame' + letter + '.png',
-	}
-
-	if (style == 'snow') {
-		frame.src = frame.src.replace('m15Frame' + letter, letter.toLowerCase());
-	} else {
-		if (letter.includes('L') && letter.length > 1) {
-			frame.src = frame.src.replace(('m15Frame' + letter), 'l' + letter[0].toLowerCase())
-		}
-
-		if (style == 'Nyx') {
-			frame.src = frame.src.replace('.png', 'Nyx.png');
-		}
-	}
-
-	if (mask) {
-		frame.masks = [
-			{
-				'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-
-var autoFramePack;
-function autoFrame() {
-	var frame = document.querySelector('#autoFrame').value;
-	if (frame == 'false') { autoFramePack = null; return; }
-
-	var colors = [];
-	if (card.text.type.text.toLowerCase().includes('land')) {
-		var rules = card.text.rules.text;
-		var flavorIndex = rules.indexOf('{flavor}');
-		if (flavorIndex == -1) {
-			flavorIndex = rules.indexOf('{oldflavor}');
-		}
-		if (flavorIndex != -1) {
-			rules = rules.substring(0, flavorIndex);
-		}
-
-		var lines = rules.split('\n');
-
-		lines.forEach(function(line) {
-			var addIndex = line.indexOf('Add');
-			var length = 3;
-			if (addIndex == -1) {
-				addIndex = line.toLowerCase().indexOf(' add');
-				length = 4;
-			}
-			if (addIndex != -1) {
-				var upToAdd = line.substring(addIndex+length).toLowerCase();
-              	['W', 'U', 'B', 'R', 'G'].forEach(function (color) {
-					if (upToAdd.includes('{' + color.toLowerCase() + '}')) {
-                  		colors.push(color);
-                	}
-                });
-			}
-		});
-
-		if (!colors.includes('W') && (rules.toLowerCase().includes('plains') || card.text.type.text.toLowerCase().includes('plains'))) {
-			colors.push('W');
-		}
-		if (!colors.includes('U') && (rules.toLowerCase().includes('island') || card.text.type.text.toLowerCase().includes('island'))) {
-			colors.push('U');
-		}
-		if (!colors.includes('B') && (rules.toLowerCase().includes('swamp') || card.text.type.text.toLowerCase().includes('swamp'))) {
-			colors.push('B');
-		}
-		if (!colors.includes('R') && (rules.toLowerCase().includes('mountain') || card.text.type.text.toLowerCase().includes('mountain'))) {
-			colors.push('R');
-		}
-		if (!colors.includes('G') && (rules.toLowerCase().includes('forest') || card.text.type.text.toLowerCase().includes('forest'))) {
-			colors.push('G');
-		}
-
-		if (rules.toLowerCase().includes('search') && colors.length == 0) {
-			// TODO: This doesn't match Bog Wreckage
-			if (rules.includes('into your hand') || (rules.includes('tapped') && !(rules.toLowerCase().includes('enters the battlefield tapped')) && !(rules.toLowerCase().includes('untap')))) {
-				colors = [];
-			} else if (colors.length == 0) {
-				colors = ['W', 'U', 'B', 'R', 'G'];
-			}
-		}
-
-		if (rules.includes('any color') || rules.includes('any one color') || rules.includes('choose a color') || rules.includes('any combination of colors')) {
-			colors = ['W', 'U', 'B', 'R', 'G'];
-		}
-
-
-	} else {
-		colors = [...new Set(card.text.mana.text.toUpperCase().split('').filter(char => ['W', 'U', 'B', 'R', 'G'].includes(char)))];
-	}
-
-	var group;
-	if (frame == 'M15Regular-1') {
-		autoM15Frame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Standard-3';
-	} else if (frame == 'M15RegularNew') {
-		autoM15NewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Accurate';
-	} else if (frame == 'M15Eighth') {
-		autoM15EighthFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Custom';
-	} else if (frame == 'M15EighthUB') {
-		autoM15EighthUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Custom';
-	} else if (frame == 'UB') {
-		autoUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Showcase-5';
-	} else if (frame == 'UBNew') {
-		autoUBNewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Accurate';
-	} else if (frame == 'FullArtNew') {
-		autoFullArtNewFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Accurate';
-	} else if (frame == 'Circuit') {
-		autoCircuitFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		group = 'Custom';
-	} else if (frame == 'Etched') {
-		group = 'Showcase-5';
-		autoEtchedFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'Praetors') {
-		group = 'Showcase-5';
-		autoPhyrexianFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'Seventh') {
-		group = 'Misc-2';
-		autoSeventhEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'M15BoxTopper') {
-		group = 'Showcase-5';
-		autoExtendedArtFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, false);
-	} else if (frame == 'M15ExtendedArtShort') {
-		group = 'Showcase-5';
-		autoExtendedArtFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text, true);
-	} else if (frame == '8th') {
-		group = 'Misc-2';
-		auto8thEditionFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'Borderless') {
-		group = 'Showcase-5';
-		autoBorderlessFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-	} else if (frame == 'BorderlessUB') {
-		group = 'Showcase-5';
-		autoBorderlessUBFrame(colors, card.text.mana.text, card.text.type.text, card.text.pt.text);
-		frame = 'Borderless';
-	}
-
-	if (autoFramePack != frame) {
-		loadScript('/js/frames/pack' + frame + '.js');
-		autoFramePack = frame;
-	}
-}
-async function autoUBFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-
-	var style = false;
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-
-	if (type_line.toLowerCase().includes('legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeUBFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeUBFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.pinline, "Stamp", false, style));
-	if (properties.pt) {
-		frames.push(makeUBFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeUBFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeUBFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeUBFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeUBFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoUBNewFrame(colors, mana_cost, type_line, power) {
-	autoM15NewFrame(colors, mana_cost, type_line, power, 'ub');
-}
-async function autoFullArtNewFrame(colors, mana_cost, type_line, power) {
-	autoM15NewFrame(colors, mana_cost, type_line, power, 'fullart');
-}
-async function autoCircuitFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp') || frame.name.includes('Gold Holo Stamp'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-
-	// Set frames
-
-	if (type_line.toLowerCase().includes('legendary')) {
-		if (properties.pinlineRight) {
-			frames.push(makeCircuitFrameByLetter(properties.pinlineRight, 'Crown', true));
-		}
-		frames.push(makeCircuitFrameByLetter(properties.pinline, "Crown", false));
-		frames.push(makeCircuitFrameByLetter(properties.pinline, "Crown Border Cover", false));
-	}
-	if (properties.pt) {
-		frames.push(makeCircuitFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeCircuitFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makeCircuitFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makeCircuitFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeCircuitFrameByLetter(properties.typeTitle, 'Title', false));
-	if (properties.pinlineRight) {
-		frames.push(makeCircuitFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makeCircuitFrameByLetter(properties.rules, 'Rules', false));
-	if (properties.frameRight) {
-		frames.push(makeCircuitFrameByLetter(properties.frameRight, 'Frame', true));
-	}
-	frames.push(makeCircuitFrameByLetter(properties.frame, 'Frame', false));
-	frames.push(makeCircuitFrameByLetter(properties.frame, 'Border', false));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15Frame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pt) {
-		frames.push(makeM15FrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15FrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15FrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15FrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15FrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15FrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15FrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15FrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15FrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15NewFrame(colors, mana_cost, type_line, power, style = 'regular') {
-	var frames;
-	if (style == 'ub') {
-		frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('Gray Holo Stamp'));
-	} else {
-		frames = card.frames.filter(frame => frame.name.includes('Extension'));
-	}
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	if (style == 'ub') {
-		if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-			style = 'ubnyx';
-		}
-	} else if (style != 'fullart') {
-	 	if (type_line.toLowerCase().includes('snow')) {
-			style = 'snow';
-		} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-			style = 'Nyx';
-		}
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx' || style == 'ubnyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-
-			frames.push(makeM15NewFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15NewFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15NewFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-
-	if (style == 'ub' || style == 'ubnyx') {
-		if (properties.pinlineRight) {
-			frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
-		}
-		frames.push(makeM15NewFrameByLetter(properties.pinline, "Stamp", false, style));
-	}
-
-	if (properties.pt) {
-		frames.push(makeM15NewFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15NewFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15NewFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15NewFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15NewFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15NewFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15NewFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15NewFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15NewFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15NewFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15EighthFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15FrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15FrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pt) {
-		frames.push(makeM15EighthFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15EighthFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15EighthFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15EighthFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15EighthFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15EighthFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15EighthFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15EighthFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoM15EighthUBFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style));
-			}
-			frames.push(makeM15EighthUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeM15EighthUBFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeM15EighthUBFrameByLetter(properties.pinline, "Crown Border Cover", false, style));
-	}
-	if (properties.pt) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(makeM15EighthUBFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(makeM15EighthUBFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(makeM15EighthUBFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(makeM15EighthUBFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(makeM15EighthUBFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeM15EighthUBFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeM15EighthUBFrameByLetter(properties.frame, 'Border', false, style));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoBorderlessFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Borderless');
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
-			}
-			frames.push(makeM15FrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Crown', true, style));
-		}
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown", false, style));
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Legend Crown Outline", false))
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown Border Cover", false));
-	}
-	if (properties.pt) {
-		frames.push(makeBorderlessFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makeBorderlessFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Title', false));
-	frames.push(makeBorderlessFrameByLetter(properties.rules, 'Rules', false));
-	frames.push(makeBorderlessFrameByLetter(properties.frame, 'Border', false));
-
-	// if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-	// 	card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	// }
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoBorderlessUBFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Borderless');
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
-			}
-			frames.push(makeUBFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Crown', true, style, true));
-		}
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown", false, style, true));
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Legend Crown Outline", false))
-		frames.push(makeBorderlessFrameByLetter(properties.pinline, "Crown Border Cover", false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeUBFrameByLetter(properties.pinlineRight, 'Stamp', true, style));
-	}
-	frames.push(makeUBFrameByLetter(properties.pinline, "Stamp", false, style));
-	if (properties.pt) {
-		frames.push(makeBorderlessFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeBorderlessFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makeBorderlessFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeBorderlessFrameByLetter(properties.typeTitle, 'Title', false));
-	frames.push(makeBorderlessFrameByLetter(properties.rules, 'Rules', false));
-	frames.push(makeBorderlessFrameByLetter(properties.frame, 'Border', false));
-
-	// if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-	// 	card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	// }
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function auto8thEditionFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (properties.pt) {
-		frames.push(make8thEditionFrameByLetter(properties.pt, 'PT', false, style));
-	}
-	if (properties.pinlineRight) {
-		frames.push(make8thEditionFrameByLetter(properties.pinlineRight, 'Pinline', true, style));
-	}
-	frames.push(make8thEditionFrameByLetter(properties.pinline, 'Pinline', false, style));
-	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Type', false, style));
-	frames.push(make8thEditionFrameByLetter(properties.typeTitle, 'Title', false, style));
-	if (properties.pinlineRight) {
-		frames.push(make8thEditionFrameByLetter(properties.rulesRight, 'Rules', true, style));
-	}
-	frames.push(make8thEditionFrameByLetter(properties.rules, 'Rules', false, style));
-	if (properties.frameRight) {
-		frames.push(make8thEditionFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(make8thEditionFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(make8thEditionFrameByLetter(properties.frame, 'Border', false, style));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoExtendedArtFrame(colors, mana_cost, type_line, power, short) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power);
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-	if (type_line.includes('Legendary')) {
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown Outline", false, style, short));
-
-		if (style == 'Nyx') {
-			if (properties.pinlineRight) {
-				frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Inner Crown', true, style, short));
-			}
-			frames.push(makeExtendedArtFrameByLetter(properties.pinline, 'Inner Crown', false, style, short));
-		}
-
-		if (properties.pinlineRight) {
-			frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Crown', true, style, short));
-		}
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown", false, style, short));
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Crown Border Cover", false, style, short));
-	} else {
-		frames.push(makeExtendedArtFrameByLetter(properties.pinline, "Title Cutout", false, style, short));
-	}
-	if (properties.pt) {
-		frames.push(makeExtendedArtFrameByLetter(properties.pt, 'PT', false, style, short));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makeExtendedArtFrameByLetter(properties.pinlineRight, 'Pinline', true, style, short));
-	}
-	frames.push(makeExtendedArtFrameByLetter(properties.pinline, 'Pinline', false, style, short));
-	frames.push(makeExtendedArtFrameByLetter(properties.typeTitle, 'Type', false, style, short));
-	frames.push(makeExtendedArtFrameByLetter(properties.typeTitle, 'Title', false, style, short));
-	if (properties.pinlineRight) {
-		frames.push(makeExtendedArtFrameByLetter(properties.rulesRight, 'Rules', true, style, short));
-	}
-	frames.push(makeExtendedArtFrameByLetter(properties.rules, 'Rules', false, style, short));
-	if (properties.frameRight) {
-		frames.push(makeExtendedArtFrameByLetter(properties.frameRight, 'Frame', true, style, short));
-	}
-	frames.push(makeExtendedArtFrameByLetter(properties.frame, 'Frame', false, style, short));
-	frames.push(makeExtendedArtFrameByLetter(properties.frame, 'Border', false, style, short));
-
-	if (card.text.pt && type_line.includes('Vehicle') && !card.text.pt.text.includes('fff')) {
-		card.text.pt.text = '{fontcolor#fff}' + card.text.pt.text;
-	}
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoEtchedFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Etched');
-	var style = 'regular';
-	if (type_line.toLowerCase().includes('snow')) {
-		style = 'snow';
-	} else if (type_line.toLowerCase().includes('enchantment creature') || type_line.toLowerCase().includes('enchantment artifact') || (document.querySelector('#autoframe-always-nyx').checked && type_line.toLowerCase().includes('enchantment'))) {
-		style = 'Nyx';
-	}
-
-	// Set frames
-
-	if (type_line.includes('Legendary')) {
-		if (style == 'Nyx') {
-			if (properties.frameRight) {
-				frames.push(makeEtchedFrameByLetter(properties.pinlineRight, 'Inner Crown', true));
-			}
-			frames.push(makeEtchedFrameByLetter(properties.pinline, 'Inner Crown', false, style));
-		}
-
-		if (properties.frameRight) {
-			frames.push(makeEtchedFrameByLetter(properties.frameRight, 'Crown', true));
-		}
-		frames.push(makeEtchedFrameByLetter(properties.frame, "Crown", false));
-		frames.push(makeEtchedFrameByLetter(properties.frame, "Crown Border Cover", false));
-	}
-	if (properties.pt) {
-		frames.push(makeEtchedFrameByLetter(properties.pt, 'PT', false));
-	}
-	frames.push(makeEtchedFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makeEtchedFrameByLetter(properties.typeTitle, 'Title', false));
-	if (properties.pinlineRight) {
-		frames.push(makeEtchedFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makeEtchedFrameByLetter(properties.rules, 'Rules', false));
-	if (properties.frameRight) {
-		frames.push(makeEtchedFrameByLetter(properties.frameRight, 'Frame', true, style));
-	}
-	frames.push(makeEtchedFrameByLetter(properties.frame, 'Frame', false, style));
-	frames.push(makeEtchedFrameByLetter(properties.frame, 'Border', false));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoPhyrexianFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Phyrexian');
-
-	// Set frames
-
-	if (type_line.toLowerCase().includes('legendary')) {
-		if (properties.pinlineRight) {
-			frames.push(makePhyrexianFrameByLetter(properties.pinlineRight, 'Crown', true));
-		}
-		frames.push(makePhyrexianFrameByLetter(properties.pinline, "Crown", false));
-	}
-	if (properties.pt) {
-		frames.push(makePhyrexianFrameByLetter(properties.pt, 'PT', false));
-	}
-	if (properties.pinlineRight) {
-		frames.push(makePhyrexianFrameByLetter(properties.pinlineRight, 'Pinline', true));
-	}
-	frames.push(makePhyrexianFrameByLetter(properties.pinline, 'Pinline', false));
-	frames.push(makePhyrexianFrameByLetter(properties.typeTitle, 'Type', false));
-	frames.push(makePhyrexianFrameByLetter(properties.typeTitle, 'Title', false));
-	if (properties.pinlineRight) {
-		frames.push(makePhyrexianFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makePhyrexianFrameByLetter(properties.rules, 'Rules', false));
-	if (properties.frameRight) {
-		frames.push(makePhyrexianFrameByLetter(properties.frameRight, 'Frame', true));
-	}
-	frames.push(makePhyrexianFrameByLetter(properties.frame, 'Frame', false));
-	frames.push(makePhyrexianFrameByLetter(properties.frame, 'Border', false));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-async function autoSeventhEditionFrame(colors, mana_cost, type_line, power) {
-	var frames = card.frames.filter(frame => frame.name.includes('Extension') || frame.name.includes('DCI Star'));
-
-	//clear the draggable frames
-	card.frames = [];
-	document.querySelector('#frame-list').innerHTML = null;
-
-	var properties = cardFrameProperties(colors, mana_cost, type_line, power, 'Seventh');
-
-	// Set frames
-	frames.push(makeSeventhEditionFrameByLetter(properties.pinline, 'Pinline', false));
-	if (properties.rulesRight) {
-		frames.push(makeSeventhEditionFrameByLetter(properties.rulesRight, 'Rules', true));
-	}
-	frames.push(makeSeventhEditionFrameByLetter(properties.rules, 'Rules', false));
-	frames.push(makeSeventhEditionFrameByLetter(properties.frame, 'Frame', false));
-	frames.push(makeSeventhEditionFrameByLetter(properties.pinline, 'Textbox Pinline', false));
-	frames.push(makeSeventhEditionFrameByLetter(properties.frame, 'Border', false));
-
-	card.frames = frames;
-	card.frames.reverse();
-	await card.frames.forEach(item => addFrame([], item));
-	card.frames.reverse();
-}
-function makeM15FrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	} else if (letter == 'L' && style == 'Nyx') {
-		style = 'regular'
-;	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/crowns/m15Crown' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1667,
-				'width': 0.9454,
-				'x': 0.0274,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/regular/m15PT' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 0.8848
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/m15/' + style.toLowerCase() + '/m15Frame' + letter + '.png',
-	}
-
-	if (style == 'snow') {
-		frame.src = frame.src.replace('m15Frame' + letter, letter.toLowerCase());
-	} else {
-		if (letter.includes('L') && letter.length > 1) {
-			frame.src = frame.src.replace(('m15Frame' + letter), 'l' + letter[0].toLowerCase())
-		}
-
-		if (style == 'Nyx') {
-			frame.src = frame.src.replace('.png', 'Nyx.png');
-		}
-	}
-
-	if (mask) {
-		frame.masks = [
-			{
-				'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-
-function makeM15NewFrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land',
-		'WE': 'White Enchantment',
-		'UE': 'Blue Enchantment',
-		'BE': 'Black Enchantment',
-		'RE': 'Red Enchantment',
-		'GE': 'Green Enchantment',
-		'ME': 'Multicolored Enchantment',
-		'AE': 'Artifact Enchantment'
-	}
-
-	if (style == 'ubnyx') {
-		letter += 'E'
-		if (mask == "Inner Crown") {
-			style = 'nyx';
-		} else {
-			style = 'ub';
-		}
-	}
-
-	if (letter.length == 2) {
-		letter = letter.split("").reverse().join("");
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[1];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {x:0, y:0, width:1, height:137/2814}
-		}
-	}
-
-	if (mask == "Crown") {
-		var framePath = '';
-		if (style == 'ub') {
-			framePath = 'ub/';
-		}
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/' + framePath + 'crowns/new/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {x:44/2010, y:53/2814, width:1922/2010, height:493/2814}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/new/' + style.toLowerCase() + '/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {x:329/2010, y:70/2814, width:1353/2010, height:64/2814}
-		};
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	} else if (mask == "Stamp") {
-		if (style == 'ub') {
-			var frame = {
-				'name': frameName + ' Holo Stamp',
-				'src': '/img/frames/m15/new/ub/stamp/' + letter.toLowerCase() + '.png',
-				'masks': [],
-				'bounds': {x:857/2015, y:2534/2814, width:299/2015, height:137/2814}
-			}
-			if (maskToRightHalf) {
-				frame.masks.push({
-					'src': '/img/frames/maskRightHalf.png',
-					'name': 'Right Half'
-				});
-			}
-			return frame;
-		}
-	}
-
-	if (mask == 'PT') {
-		var path = '/img/frames/m15/regular/m15PT';
-		if (style == 'ub') {
-			path = '/img/frames/m15/ub/pt/';
-			letter = letter.toLowerCase();
-		}
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': path + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 0.8848
-			}
-		}
-	}
-
-	var stylePath = '';
-	if (style != 'regular') {
-		stylePath = style.toLowerCase() + '/';
-	}
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/m15/new/' + stylePath + letter.toLowerCase() + '.png',
-	}
-
-	// if (letter.includes('L') && letter.length > 1) {
-	// 	frame.src = frame.src.replace(('m15Frame' + letter), 'l' + letter[0].toLowerCase())
-	// }
-
-	if (mask) {
-		frame.masks = [
-			{
-				'src': '/img/frames/m15/new/' + mask.toLowerCase() + '.png',
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makeM15EighthFrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/crowns/m15Crown' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1667,
-				'width': 0.9454,
-				'x': 0.0274,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/regular/m15PT' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 1901/2100
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/custom/m15-eighth/' + style.toLowerCase() + '/' + letter.toLowerCase() + '.png',
-	}
-
-	if (style != 'regular') {
-		frame.name = style.charAt(0).toUpperCase() + style.slice(1) + ' ' + frame.name;
-	}
-
-	if (mask) {
-		if (mask.toLowerCase() == 'border' || mask.toLowerCase() == 'frame') {
-			frame.masks = [
-				{
-					'src': '/img/frames/custom/m15-eighth/regular/' + mask + '.png',
-					'name': mask
-				}
-			]
-		} else {
-			frame.masks = [
-				{
-					'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-					'name': mask
-				}
-			]
-		}
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makeM15EighthUBFrameByLetter(letter, mask = false, maskToRightHalf = false) {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/ub/crowns/m15Crown' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1667,
-				'width': 0.9454,
-				'x': 0.0274,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/ub/pt/' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 1901/2100
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/custom/m15-eighth/ub/' + letter.toLowerCase() + '.png',
-	}
-
-	if (mask) {
-		if (mask.toLowerCase() == 'border' || mask.toLowerCase() == 'frame') {
-			frame.masks = [
-				{
-					'src': '/img/frames/custom/m15-eighth/regular/' + mask + '.png',
-					'name': mask
-				}
-			]
-		} else {
-			frame.masks = [
-				{
-					'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-					'name': mask
-				}
-			]
-		}
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-
-function makeBorderlessFrameByLetter(letter, mask = false, maskToRightHalf = false, style, universesBeyond = false) {
-	letter = letter.toUpperCase();
-
-	var isVehicle = letter == 'V';
-
-	if (letter == 'V') {
-		letter = 'A';
-	}
-
-	if (letter == 'ML') {
-		letter = 'M';
-	} else if (letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Legend Crown Outline") {
-		return {
-			'name': 'Legend Crown Outline',
-			'src': '/img/frames/m15/crowns/m15CrownFloatingOutline.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1062,
-				'width': 0.944,
-				'x': 0.028,
-				'y': 0.0172
-			}
-		};
-	}
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'erase': true,
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/crowns/m15Crown' + letter + 'Floating.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1024,
-				'width': 0.9387,
-				'x': 0.0307,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/borderless/pt/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.066666666666,
-				'width': 0.182666666666,
-				'x': 0.764,
-				'y': 0.8861904761904762
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/m15/borderless/m15GenericShowcaseFrame' + letter + '.png',
-	}
-
-	if (letter.includes('L') && letter.length > 1) {
-		frame.src = frame.src.replace(('m15GenericShowcaseFrame' + letter), 'l' + letter[0].toLowerCase())
-	}
-
-	if (mask) {
-		if (mask == 'Pinline') {
-			frame.masks = [
-				{
-					'src': '/img/frames/m15/genericShowcase/m15GenericShowcaseMask' + mask + '.png',
-					'name': mask
-				}
-			];
-		} else {
-			frame.masks = [
-				{
-					'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-					'name': mask
-				}
-			];
-		}
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function make8thEditionFrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if (mask == 'PT') {
-		if (letter.length > 1) {
-			letter = letter[0];
-		} else if (letter == 'C') {
-			letter = 'L';
-		}
-	}
-
-	if (letter == 'V') {
-		letter = 'A';
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/8th/pt/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0839,
-				'width': 0.2147,
-				'x': 0.7227,
-				'y': 0.8796
-			}
-		}
-	}
-
-	var stylePath = style == 'Nyx' ? 'nyx/' : '';
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/8th/' + letter.toLowerCase() + '.png',
-	}
-
-	if (letter.includes('L') && letter.length > 1) {
-		frame.src = frame.src.replace(('m15Frame' + letter), 'l' + letter[0].toLowerCase())
-	}
-
-	if (mask) {
-		frame.masks = [
-			{
-				'src': '/img/frames/8th/' + mask.toLowerCase() + '.png',
-				'name': mask
-			}
-		]
-
-		if (mask == 'Border') {
-			frame.masks[0].src = frame.masks[0].src.replace('.png', '.svg');
-		}
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makeExtendedArtFrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular', short = false) {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Legend Crown Outline") {
-		return {
-			'name': 'Legend Crown Outline',
-			'src': '/img/frames/m15/crowns/m15CrownFloatingOutline.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1062,
-				'width': 0.944,
-				'x': 0.028,
-				'y': 0.0172
-			}
-		};
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/crowns/m15Crown' + letter + 'Floating.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1024,
-				'width': 0.9387,
-				'x': 0.0307,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Crown Outline") {
-		var frame = {
-			'name': 'Legend Crown Outline',
-			'src': '/img/frames/m15/crowns/m15CrownFloatingOutline.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1062,
-				'width': 0.944,
-				'x': 0.028,
-				'y': 0.0172
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + '(' + style + ')' + mask,
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/regular/m15PT' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 0.8848
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame'
-	}
-
-	if (style != 'regular') {
-		frame.src = '/img/frames/extended/regular/' + style.toLowerCase() + '/' + letter.toLowerCase() + '.png';
-		if (short) {
-			frame.src = frame.src.replace('/regular/', '/shorter/');
-		}
-	} else if (short) {
-		frame.src = '/img/frames/m15/boxTopper/short/' + letter.toLowerCase() + '.png';
-	} else {
-		frame.src = '/img/frames/m15/boxTopper/m15BoxTopperFrame' + letter + '.png';
-	}
-
-	if (mask) {
-		if (mask == 'Title Cutout') {
-			if (short) {
-				frame.masks = [
-					{
-						'src': '/img/frames/extended/shorter/titleCutout.png',
-						'name': 'Title Cutout'
-					}
-				]
-			} else {
-				frame.masks = [
-					{
-						'src': '/img/frames/m15/boxTopper/m15BoxTopperTitleCutout.png',
-						'name': 'Title Cutout'
-					}
-				]
-			}
-		} else if (short && ['Frame', 'Rules', 'Type', 'Pinline'].includes(mask)) {
-			var extension = mask == 'Type' ? '.png' : '.svg';
-
-			frame.masks = [
-				{
-					'src': '/img/frames/m15/boxTopper/short/' + mask.toLowerCase().replace('rules', 'text') + extension,
-					'name': mask
-				}
-			]
-		} else {
-			frame.masks = [
-				{
-					'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-					'name': mask
-				}
-			]
-		}
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makeUBFrameByLetter(letter, mask = false, maskToRightHalf = false) {
-	letter = letter.toUpperCase();
-
-	if (letter == 'C') {
-		letter = 'L';
-	}
-
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/ub/crowns/m15Crown' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1667,
-				'width': 0.9454,
-				'x': 0.0274,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	} else if (mask == "Stamp") {
-		var frame = {
-			'name': frameName + ' Holo Stamp',
-			'src': '/img/frames/m15/ub/regular/stamp/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0486,
-				'width': 0.1494,
-				'x': 0.4254,
-				'y': 0.9005
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + 'UB.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' ' + mask + ' (' + style + ')',
-			'src': '/img/frames/m15/innerCrowns/m15InnerCrown' + letter + style + 'UB.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0239,
-				'width': 0.672,
-				'x': 0.164,
-				'y': 0.0239
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/ub/pt/' + (letter == 'L' ? 'C' : letter).toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 0.8848
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/m15/ub/regular/' + letter.toLowerCase() + '.png',
-	}
-
-	if (mask) {
-		frame.masks = [
-			{
-				'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makeCircuitFrameByLetter(letter, mask = false, maskToRightHalf = false) {
-	letter = letter.toUpperCase();
-
-	if (letter == 'C') {
-		letter = 'L';
-	}
-
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land',
-		'ML': 'Multicolored Land'
-	}
-
-	if ((mask.includes('Crown') || mask == 'PT' || mask.includes('Stamp')) && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Border Cover',
-			'src': '/img/black.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0177,
-				'width': 0.9214,
-				'x': 0.0394,
-				'y': 0.0277
-			}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/m15/ub/crowns/m15Crown' + letter + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.1667,
-				'width': 0.9454,
-				'x': 0.0274,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/ub/pt/' + (letter == 'L' ? 'C' : letter).toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 0.8848
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/custom/circuit/' + letter.toLowerCase() + '.png',
-	}
-
-	if (mask) {
-		frame.masks = [
-			{
-				'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makeEtchedFrameByLetter(letter, mask = false, maskToRightHalf = false, style = 'regular') {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle'
-	}
-
-	if (mask == 'PT' && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	if (letter == 'ML') {
-		letter = 'M';
-	} else if (letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	} else if (letter == 'V' && mask == 'Crown') {
-		letter = 'A';
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown Border Cover") {
-		return {
-			'name': 'Legend Crown Cover',
-			'src': '/img/frames/etched/regular/crowns/cover.svg',
-			'masks': [],
-			'bounds': {	}
-		}
-	}
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legend Crown',
-			'src': '/img/frames/etched/regular/crowns/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.092,
-				'width': 0.9387,
-				'x': 0.0307,
-				'y': 0.0191
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == "Inner Crown") {
-		var frame = {
-			'name': frameName + ' Inner Crown',
-			'src': '/img/frames/etched/regular/innerCrowns/' + style.toLowerCase() + '/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {x:244/1500, y:51/2100, width:1012/1500, height:64/2100}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/etched/regular/pt/' + letter.toLowerCase() + '.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0733,
-				'width': 0.188,
-				'x': 0.7573,
-				'y': 0.8848
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/etched/regular/' + letter.toLowerCase() + '.png',
-	}
-
-	if (style != 'regular') {
-		frame.src = frame.src.replace('/regular/', '/regular/' + style.toLowerCase() + '/');
-		frame.name = frame.name += ' (' + style +')';
-	}
-
-	if (mask) {
-		frame.masks = [
-			{
-				'src': '/img/frames/etched/regular/' + mask.toLowerCase() + '.svg',
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makePhyrexianFrameByLetter(letter, mask = false, maskToRightHalf = false) {
-	if (letter == 'C' || letter == 'V') {
-		letter = 'L';
-	}
-
-	if (mask == 'Rules') {
-		mask = 'Rules Text';
-	}
-
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land'
-	}
-
-	if (mask == 'PT' && letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	if (letter == 'ML') {
-		letter = 'M';
-	} else if (letter.includes('L') && letter.length > 1) {
-		letter = letter[0];
-	}
-
-	var frameName = frameNames[letter];
-
-	if (mask == "Crown") {
-		var frame = {
-			'name': frameName + ' Legendary Crown',
-			'src': '/img/frames/m15/praetors/' + letter.toLowerCase() + 'Crown.png',
-			'masks': [],
-			'bounds': {
-				'height': 100/2100,
-				'width': 1,
-				'x': 0,
-				'y': 0
-			}
-		}
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-		return frame;
-	}
-
-	if (mask == 'PT') {
-		return {
-			'name': frameName + ' Power/Toughness',
-			'src': '/img/frames/m15/praetors/' + letter.toLowerCase() + 'pt.png',
-			'masks': [],
-			'bounds': {
-				'height': 0.0772,
-				'width': 0.212,
-				'x': 0.746,
-				'y': 0.8858
-			}
-		}
-	}
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/m15/praetors/' + letter.toLowerCase() + '.png',
-	}
-
-	if (mask == 'Type' || mask == 'Title') {
-		frame.masks = [
-			{
-				'src': '/img/frames/m15/regular/m15Mask' + mask + '.png',
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else if (mask) {
-		var extension = "png";
-		var name = mask.toLowerCase();
-		if (mask == 'Frame') {
-			extension = 'svg';
-		} else if (mask == 'Rules Text') {
-			extension = 'svg';
-			name = 'text';
-		}
-
-		frame.masks = [
-			{
-				'src': '/img/frames/m15/praetors/' + name + '.' + extension,
-				'name': mask
-			}
-		]
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
-function makeSeventhEditionFrameByLetter(letter, mask = false, maskToRightHalf = false) {
-	letter = letter.toUpperCase();
-	var frameNames = {
-		'W': 'White',
-		'U': 'Blue',
-		'B': 'Black',
-		'R': 'Red',
-		'G': 'Green',
-		'M': 'Multicolored',
-		'A': 'Artifact',
-		'L': 'Land',
-		'C': 'Colorless',
-		'V': 'Vehicle',
-		'WL': 'White Land',
-		'UL': 'Blue Land',
-		'BL': 'Black Land',
-		'RL': 'Red Land',
-		'GL': 'Green Land'
-	}
-
-	if (letter == 'V') {
-		letter = 'A';
-	}
-
-	if (letter == 'ML') {
-		letter = 'L';
-	}
-
-	var frameName = frameNames[letter];
-
-	var frame = {
-		'name': frameName + ' Frame',
-		'src': '/img/frames/seventh/regular/' + letter.toLowerCase() + '.png'
-	};
-
-	if (mask) {
-		if (mask == 'Textbox Pinline') {
-			frame.masks = [
-				{
-					'src': '/img/frames/seventh/regular/trim.svg',
-					'name': 'Textbox Pinline'
-				}
-			]
-		} else {
-			frame.masks = [
-				{
-					'src': '/img/frames/seventh/regular/' + mask.toLowerCase() + '.svg',
-					'name': mask
-				}
-			]
-		}
-
-		if (maskToRightHalf) {
-			frame.masks.push({
-				'src': '/img/frames/maskRightHalf.png',
-				'name': 'Right Half'
-			});
-		}
-	} else {
-		frame.masks = [];
-	}
-
-	return frame;
-}
 async function addFrame(additionalMasks = [], loadingFrame = false) {
 	var frameToAdd = JSON.parse(JSON.stringify(availableFrames[selectedFrameIndex]));
 	var maskThumbnail = true;
 	if (!loadingFrame) {
-		// Store the available masks from the frame pack for later use in the editor
-		if (availableFrames[selectedFrameIndex] && availableFrames[selectedFrameIndex].masks) {
-			frameToAdd.availableMasks = JSON.parse(JSON.stringify(availableFrames[selectedFrameIndex].masks));
-		} else {
-			frameToAdd.availableMasks = [];
-		}
 		// The frame is being added manually by the user, so we must process which mask(s) they have selected
 		var noDefaultMask = 0;
 		if (frameToAdd.noDefaultMask) {noDefaultMask = 1;}
@@ -4287,25 +937,6 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 		frameToAdd.image.src = fixUri(frameToAdd.src);
 	}
 	if (!loadingFrame) {
-		// Check if this frame should have preserveAlpha enabled by default
-		// This applies when a frame:
-		// 1. Has masks
-		// 2. Is not the bottom layer (card.frames.length > 0 means there are already frames)
-		// 3. Has preserveAlpha set to true in the frame pack definition
-		if (frameToAdd.preserveAlpha === true && frameToAdd.masks && frameToAdd.masks.length > 0) {
-			// Track that this frame supports preserveAlpha management
-			frameToAdd.supportsPreserveAlpha = true;
-			if (card.frames.length > 0) {
-				// Keep preserveAlpha as true if not the bottom layer
-				frameToAdd.preserveAlpha = true;
-			} else {
-				// Remove preserveAlpha if it's the first frame
-				delete frameToAdd.preserveAlpha;
-			}
-		} else {
-			// Remove preserveAlpha if conditions aren't met
-			delete frameToAdd.preserveAlpha;
-		}
 		card.frames.unshift(frameToAdd);
 	}
 	var frameElement = document.createElement('div');
@@ -4334,12 +965,6 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 	frameElement.appendChild(frameElementMask);
 	var frameElementLabel = document.createElement('h4');
 	frameElementLabel.innerHTML = frameToAdd.name;
-	if (frameToAdd.erase) {
-		frameElementLabel.innerHTML += ', Erase Card';
-	}
-	if (frameToAdd.preserveAlpha) {
-		frameElementLabel.innerHTML += ', Preserve Alpha';
-	}
 	frameToAdd.masks.forEach(item => frameElementLabel.innerHTML += ', ' + item.name);
 	frameElement.appendChild(frameElementLabel);
 	var frameElementClose = document.createElement('h4');
@@ -4377,9 +1002,9 @@ function frameElementClicked(event) {
 		document.querySelector('#frame-editor-opacity').value = selectedFrame.opacity || 100;
 		document.querySelector('#frame-editor-opacity').onchange = (event) => {selectedFrame.opacity = event.target.value; drawFrames();}
 		document.querySelector('#frame-editor-erase').checked = selectedFrame.erase || false;
-		document.querySelector('#frame-editor-erase').onchange = (event) => {selectedFrame.erase = event.target.checked; drawFrames(); updateFrameLabel();}
+		document.querySelector('#frame-editor-erase').onchange = (event) => {selectedFrame.erase = event.target.checked; drawFrames();}
 		document.querySelector('#frame-editor-alpha').checked = selectedFrame.preserveAlpha || false;
-		document.querySelector('#frame-editor-alpha').onchange = (event) => {selectedFrame.preserveAlpha = event.target.checked; drawFrames(); updateFrameLabel();}
+		document.querySelector('#frame-editor-alpha').onchange = (event) => {selectedFrame.preserveAlpha = event.target.checked; drawFrames();}
 		document.querySelector('#frame-editor-color-overlay-check').checked = selectedFrame.colorOverlayCheck || false;
 		document.querySelector('#frame-editor-color-overlay-check').onchange = (event) => {selectedFrame.colorOverlayCheck = event.target.checked; drawFrames();}
 		document.querySelector('#frame-editor-color-overlay').value = selectedFrame.colorOverlay || false;
@@ -4396,70 +1021,22 @@ function frameElementClicked(event) {
 		document.querySelector('#frame-editor-hsl-lightness-slider').value = selectedFrame.hslLightness || 0;
 		document.querySelector('#frame-editor-hsl-lightness').onchange = (event) => {selectedFrame.hslLightness = event.target.value; drawFrames();}
 		document.querySelector('#frame-editor-hsl-lightness-slider').onchange = (event) => {selectedFrame.hslLightness = event.target.value; drawFrames();}
-		// Refresh mask dropdown
-		refreshMaskDropdown();
+		// Removing masks
+		const selectMaskElement = document.querySelector('#frame-editor-masks');
+		selectMaskElement.innerHTML = null;
+		const maskOptionNone = document.createElement('option');
+		maskOptionNone.disabled = true;
+		maskOptionNone.innerHTML = 'None Selected';
+		selectMaskElement.appendChild(maskOptionNone);
+		selectedFrame.masks.forEach(mask => {
+			const maskOption = document.createElement('option');
+			maskOption.innerHTML = mask.name;
+			selectMaskElement.appendChild(maskOption);
+		});
+		selectMaskElement.selectedIndex = 0;
 	}
-}
-function addMaskToList(list, mask) {
-	if (!list.find(m => m.name === mask.name && m.src === mask.src)) {
-		list.push({name: mask.name, src: mask.src});
-	}
-}
-function buildFrameLabelText(frame) {
-	const parts = [frame.name];
-	if (frame.erase) parts.push('Erase Card');
-	if (frame.preserveAlpha) parts.push('Preserve Alpha');
-	parts.push(...frame.masks.map(m => m.name));
-	return parts.join(', ');
-}
-function updateFrameLabel() {
-	if (!selectedFrame) return;
-	Array.from(document.querySelectorAll('#frame-list .frame-element')).forEach(el => {
-		const frame = card.frames[Array.from(el.parentElement.children).indexOf(el)];
-		if (frame === selectedFrame) {
-			const label = el.querySelector('h4:not(.frame-element-close)');
-			if (label) label.innerHTML = buildFrameLabelText(frame);
-		}
-	});
-}
-function updateAllFrameLabels() {
-	Array.from(document.querySelectorAll('#frame-list .frame-element')).forEach(el => {
-		const frame = card.frames[Array.from(el.parentElement.children).indexOf(el)];
-		const label = el.querySelector('h4:not(.frame-element-close)');
-		if (label && frame) label.innerHTML = buildFrameLabelText(frame);
-	});
-}
-function createMaskObject(name, src, noThumb = false) {
-	const mask = {name, src, image: new Image()};
-	if (noThumb) mask.noThumb = true;
-	mask.image.crossOrigin = 'anonymous';
-	mask.image.onload = drawFrames;
-	mask.image.src = fixUri(src);
-	return mask;
-}
-function refreshMaskDropdown() {
-	if (!selectedFrame) return;
-	// Ensure masks array exists
-	if (!selectedFrame.masks) {
-		selectedFrame.masks = [];
-	}
-	
-	// Refresh "Select and remove masks" dropdown
-	const selectMaskElement = document.querySelector('#frame-editor-masks');
-	selectMaskElement.innerHTML = '';
-	const maskOptionNone = document.createElement('option');
-	maskOptionNone.disabled = true;
-	maskOptionNone.innerHTML = 'None Selected';
-	selectMaskElement.appendChild(maskOptionNone);
-	selectedFrame.masks.forEach(mask => {
-		const maskOption = document.createElement('option');
-		maskOption.innerHTML = mask.name;
-		selectMaskElement.appendChild(maskOption);
-	});
-	selectMaskElement.selectedIndex = 0;
 }
 function frameElementMaskRemoved() {
-	if (!selectedFrame) return;
 	const selectElement = document.querySelector('#frame-editor-masks');
 	const selectedOption = selectElement.value;
 	if (selectedOption != 'None Selected') {
@@ -4468,206 +1045,23 @@ function frameElementMaskRemoved() {
 		selectedFrame.masks.forEach(mask => {
 			if (mask.name == selectedOption) {
 				selectedFrame.masks = selectedFrame.masks.filter(item => item.name != selectedOption);
-				
-				// If all masks are removed, disable preserveAlpha management
-				if (selectedFrame.masks.length === 0) {
-					delete selectedFrame.supportsPreserveAlpha;
-					delete selectedFrame.preserveAlpha;
-				}
-				
 				drawFrames();
-				updateFrameLabel();
 			}
 		});
 	}
 }
 function uploadMaskOption(imageSource) {
-	if (!selectedFrame) return;
-	customCount++;
-	selectedFrame.masks.push(createMaskObject(`Uploaded Image (${customCount})`, imageSource, true));
-	updateFrameLabel();
-	refreshMaskDropdown();
+	const uploadedMask = {name:`Uploaded Image (${customCount})`, src:imageSource, noThumb:true, image: new Image()};
+	customCount ++;
+	selectedFrame.masks.push(uploadedMask);
+	uploadedMask.image.onload = drawFrames;
+	uploadedMask.image.src = imageSource;
 }
 function uploadFrameOption(imageSource) {
 	const uploadedFrame = {name:`Uploaded Image (${customCount})`, src:imageSource, noThumb:true};
 	customCount ++;
 	availableFrames.push(uploadedFrame);
 	loadFramePack();
-}
-//CUSTOM MANA SYMBOLS
-const customManaSets = new Map();
-let customManaCount = 0;
-let currentManaPrefix = ''; // Global prefix that applies to all text boxes
-
-// Built-in custom mana symbol sets
-const builtInManaSets = [
-	{name: 'Breaking News', prefix: 'breakingNews', script: '/js/frames/manaSymbolsBreakingNews.js'},
-	{name: 'Cartoony', prefix: 'c', script: '/js/frames/manaSymbolsCartoony.js'},
-	{name: 'FAB', prefix: 'fab', script: '/js/frames/manaSymbolsFAB.js'},
-	{name: 'Future', prefix: 'f', script: '/js/frames/manaSymbolsFuture.js'},
-	{name: 'M21', prefix: 'm21', script: '/js/frames/manaSymbolsM21.js'},
-	{name: 'Mystical Archive JP', prefix: 'majp', script: '/js/frames/manaSymbolsMysticalArchiveJP.js'},
-	{name: 'Neon', prefix: 'neon', script: '/js/frames/manaSymbolsNeon.js'},
-	{name: 'Oil Slick', prefix: 'oilslick', script: '/js/frames/manaSymbolsOilSlick.js'},
-	{name: 'Old', prefix: 'old', script: '/js/frames/manaSymbolsOld.js'},
-	{name: 'Outline', prefix: 'outline', script: '/js/frames/manaSymbolsOutline.js'},
-	{name: 'Outline Alt', prefix: 'outlineAlt', script: '/js/frames/manaSymbolsOutlineAlt.js'},
-	{name: 'Pokemon', prefix: 'pokemon', script: '/js/frames/manaSymbolsPokemon.js'},
-	{name: 'Wanted', prefix: 'wanted', script: '/js/frames/manaSymbolsWanted.js'}
-];
-
-function populateManaSetsDropdown() {
-	const selector = document.querySelector('#custom-mana-selector');
-	if (!selector) return;
-	
-	// Check if already populated (more than just the default option)
-	if (selector.options.length > 1) return;
-	
-	// Add built-in sets
-	builtInManaSets.forEach(set => {
-		const option = document.createElement('option');
-		option.value = 'builtin:' + set.prefix;
-		option.textContent = set.name;
-		selector.appendChild(option);
-	});
-}
-function uploadCustomManaFolder(files) {
-	if (files.length === 0) return;
-	
-	// Get folder name from the first file's webkitRelativePath
-	const firstFile = files[0];
-	let folderName = 'Custom Set ' + (++customManaCount);
-	if (firstFile.webkitRelativePath) {
-		const pathParts = firstFile.webkitRelativePath.split('/');
-		if (pathParts.length > 1) {
-			folderName = pathParts[0];
-		}
-	}
-	
-	const setName = folderName;
-	const prefix = `custom${customManaCount}`;
-	const manaImages = new Map();
-	
-	// Standard mana symbol names we're looking for
-	const standardSymbols = ['w', 'u', 'b', 'r', 'g', 'c', 'cc', 's', 'x', 't', 
-		'wu', 'wb', 'ub', 'ur', 'br', 'bg', 'rg', 'rw', 'gw', 'gu',
-		'wp', 'up', 'bp', 'rp', 'gp', 'cp', 
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
-		'10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
-		'y', 'z', 'q', 'e', 'chaos', 'pw', 'energy', 'acorn', 'halfwhite',
-		'half', 'tap', 'untap', 'snow'];
-	
-	// Process each file
-	Array.from(files).forEach(file => {
-		if (!file.type.startsWith('image/')) return;
-		
-		// Extract the mana symbol name from filename (without extension)
-		const fileName = file.name.split('.')[0].toLowerCase();
-		
-		// Try to find which standard symbol this file represents
-		// Look for the symbol at the end of the filename
-		let symbolName = null;
-		for (const symbol of standardSymbols) {
-			if (fileName.endsWith(symbol)) {
-				symbolName = symbol;
-				break;
-			}
-		}
-		
-		// If we couldn't identify the symbol, use the full filename
-		if (!symbolName) {
-			symbolName = fileName;
-		}
-		
-		// Read the file
-		const reader = new FileReader();
-		reader.onload = function(e) {
-			manaImages.set(symbolName, e.target.result);
-			
-			// When all images are loaded, save the set
-			if (manaImages.size === Array.from(files).filter(f => f.type.startsWith('image/')).length) {
-				customManaSets.set(setName, {
-					name: setName,
-					prefix: prefix,
-					images: manaImages
-				});
-				
-				// Add to dropdown
-				const selector = document.querySelector('#custom-mana-selector');
-				const option = document.createElement('option');
-				option.value = setName;
-				option.textContent = setName;
-				selector.appendChild(option);
-				
-				// Automatically select the newly uploaded set
-				selector.value = setName;
-				selectCustomManaSet(setName);
-				
-				notify(`Custom mana set "${setName}" loaded with ${manaImages.size} symbols`, 3);
-			}
-		};
-		reader.readAsDataURL(file);
-	});
-}
-
-function selectCustomManaSet(setName) {
-	if (!setName || setName === '') {
-		// Reset to default mana symbols
-		currentManaPrefix = '';
-	} else if (setName.startsWith('builtin:')) {
-		// Handle built-in mana symbol sets
-		const prefix = setName.replace('builtin:', '');
-		const builtInSet = builtInManaSets.find(s => s.prefix === prefix);
-		
-		if (builtInSet) {
-			// Set the global mana prefix
-			currentManaPrefix = builtInSet.prefix;
-			
-			// Load the mana symbols script if not already loaded
-			if (!card.manaSymbols.includes(builtInSet.script)) {
-				loadScript(builtInSet.script);
-			}
-		}
-	} else {
-		// Handle user-uploaded custom sets
-		const customSet = customManaSets.get(setName);
-		if (customSet) {
-			// Set the global mana prefix
-			currentManaPrefix = customSet.prefix;
-			
-			// Load the custom mana symbols into the mana Map
-			loadCustomManaSymbols(customSet);
-		}
-	}
-	
-	// Redraw text with new mana symbols
-	drawTextBuffer();
-}
-function loadCustomManaSymbols(customSet) {
-	// Check if already loaded
-	if (mana.get(customSet.prefix + 'w')) {
-		return; // Already loaded
-	}
-	
-	// Load each image from the custom set
-	// symbolName is like 'w', 'u', 'b', etc.
-	// We store them as 'custom1w', 'custom1u', 'custom1b', etc.
-	customSet.images.forEach((imageData, symbolName) => {
-		const fullName = customSet.prefix + symbolName;
-		
-		const manaSymbol = {
-			name: fullName,
-			path: imageData,
-			matchColor: false,
-			width: 1,
-			height: 1,
-			yOffset: 0,
-			image: new Image()
-		};
-		
-		manaSymbol.image.src = imageData;
-		mana.set(fullName, manaSymbol);
-	});
 }
 function hsl(canvas, inputH, inputS, inputL) {
 	//adjust inputs
@@ -4808,14 +1202,13 @@ function loadTextOptions(textObject, replace=true) {
 		document.querySelector('#text-options').appendChild(textOptionElement);
 	});
 	document.querySelector('#text-options').firstChild.click();
-	populateManaSetsDropdown();
 	drawTextBuffer();
 	drawNewGuidelines();
 }
 function textOptionClicked(event) {
 	selectedTextIndex = getElementIndex(event.target);
 	document.querySelector('#text-editor').value = Object.entries(card.text)[selectedTextIndex][1].text;
-	document.querySelector('#text-editor-font-size').value = Object.entries(card.text)[selectedTextIndex][1].fontSize || 0;
+	document.querySelector('#text-editor-font-size').value = Object.entries(card.text)[selectedTextIndex][1].fontSize;
 	selectSelectable(event);
 }
 function textboxEditor() {
@@ -4851,39 +1244,10 @@ async function drawText() {
 	textContext.clearRect(0, 0, textCanvas.width, textCanvas.height);
 	prePTContext.clearRect(0, 0, prePTCanvas.width, prePTCanvas.height);
 	drawTextBetweenFrames = false;
-	
-	// Check if any textbox has an outline
-	const hasAnyOutlines = Object.values(card.text).some(textObj => 
-		(textObj.outlineWidth || 0) > 0
-	);
-	
-	if (!hasAnyOutlines) {
-		// Simple single-pass rendering
-		for (var textObject of Object.entries(card.text)) {
-			await writeText(textObject[1], textContext);
-			continue;
-		}
-	} else {
-		// Two-pass rendering for outlined text
-		textContext.isOutlinePass = true;
-		textContext.isFillPass = false;
-		for (var textObject of Object.entries(card.text)) {
-			await writeText(textObject[1], textContext);
-			continue;
-		}
-		
-		textContext.isOutlinePass = false;
-		textContext.isFillPass = true;
-		for (var textObject of Object.entries(card.text)) {
-			await writeText(textObject[1], textContext);
-			continue;
-		}
-		
-		// Clean up flags (only needed when we set them)
-		delete textContext.isOutlinePass;
-		delete textContext.isFillPass;
+	for (var textObject of Object.entries(card.text)) {
+		await writeText(textObject[1], textContext);
+		continue;
 	}
-	
 	if (drawTextBetweenFrames || redrawFrames) {
 		drawFrames();
 		if (!drawTextBetweenFrames) {
@@ -5066,9 +1430,6 @@ function writeText(textObject, targetContext) {
 	var textManaCost = textObject.manaCost || false;
 	var textAllCaps = textObject.allCaps || false;
 	var textManaSpacing = scaleWidth(textObject.manaSpacing) || 0;
-    // Check for drawing mode flags on the context
-    var isOutlinePass = targetContext.isOutlinePass || false;
-    var isFillPass = targetContext.isFillPass || false;
 	//Buffers the canvases accordingly
 	var canvasMargin = 300;
 	paragraphCanvas.width = textWidth + 2 * canvasMargin;
@@ -5249,7 +1610,7 @@ function writeText(textObject, targetContext) {
 		        }
 		    }
 		}
-		var textFont = textObject.font ? textObject.font.replaceAll('--', ' ') : 'mplantin';
+		var textFont = textObject.font || 'mplantin';
 		FontLoadTracker.track(textFont);
 		var textAlign = textObject.align || 'left';
 		var textJustify = textObject.justify || 'left';
@@ -5297,15 +1658,14 @@ function writeText(textObject, targetContext) {
 		// 	lineCanvas.style.letterSpacing = '3.5px';
 		// }
 		textSize += parseInt(textObject.fontSize || '0');
-		lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
+		lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
 		lineContext.fillStyle = textColor;
 		lineContext.shadowColor = textShadowColor;
 		lineContext.shadowOffsetX = textShadowOffsetX;
 		lineContext.shadowOffsetY = textShadowOffsetY;
 		lineContext.shadowBlur = textShadowBlur;
 		lineContext.strokeStyle = textObject.outlineColor || 'black';
-		// Calculate outline width proportional to current text size for proper scaling
-		var textOutlineWidth = textObject.outlineWidth ? (textObject.outlineWidth * textSize / textObject.size) : 0;
+		var textOutlineWidth = scaleHeight(textObject.outlineWidth) || 0;
 		var textLineCap = textObject.lineCap || 'round';
 		var textLineJoin = textObject.lineJoin || 'round';
 		var hideBottomInfoBorder = card.hideBottomInfoBorder || false;
@@ -5337,7 +1697,7 @@ function writeText(textObject, targetContext) {
 					var barDistance = 0;
 					realTextAlign = textAlign;
 					textAlign = 'left';
-					if (card.version == 'cartoony' || currentManaPrefix == 'c') {
+					if (card.version == 'cartoony') {
 						barImageName = 'cflavor';
 						barWidth = scaleWidth(0.8547);
 						barHeight = scaleHeight(0.0458);
@@ -5356,25 +1716,25 @@ function writeText(textObject, targetContext) {
 						textFontExtension = '';
 						if (!textFontStyle.includes('italic')) {textFontStyle += 'italic ';}
 					}
-					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
+					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
 				} else if (possibleCode == '/i') {
 					textFontExtension = '';
 					textFontStyle = textFontStyle.replace('italic ', '');
-					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
+					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
 				} else if (possibleCode == 'bold') {
 					if (textFont == 'gillsans') {
 						textFontExtension = 'bold';
 					} else {
 						if (!textFontStyle.includes('bold')) {textFontStyle += 'bold ';}
 					}
-					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
+					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
 				} else if (possibleCode == '/bold') {
 					if (textFont == 'gillsans') {
 						textFontExtension = '';
 					} else {
 						textFontStyle = textFontStyle.replace('bold ', '');
 					}
-					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
+					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
 				} else if (possibleCode == 'left') {
 					textAlign = 'left';
 				} else if (possibleCode == 'center') {
@@ -5475,7 +1835,7 @@ function writeText(textObject, targetContext) {
 					} else {
 						textSize += parseInt(possibleCode.replace('fontsize', '')) || 0;
 					}
-					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
+					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
 				} else if (possibleCode.includes('font') || savedFont) {
 					textFont = word.replace('{font', '').replace('}', '');
 					if (savedFont) {
@@ -5485,7 +1845,7 @@ function writeText(textObject, targetContext) {
 					FontLoadTracker.track(textFont);
 					textFontExtension = '';
 					textFontStyle = '';
-					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
+					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
 					savedFont = null;
 				} else if (possibleCode.includes('outlinecolor')) {
 					lineContext.strokeStyle = possibleCode.replace('outlinecolor', '');
@@ -5594,21 +1954,11 @@ function writeText(textObject, targetContext) {
 				} else if (possibleCode.includes('kerning')) {
 					lineContext.letterSpacing = possibleCode.replace('kerning', '') + 'px';
 					lineContext.font = lineContext.font; //necessary for the letterspacing update to be recognized
-				} else if (
-					// Check if symbol exists with custom prefix or in default set
-					(currentManaPrefix && (getManaSymbol(currentManaPrefix + possibleCode.replaceAll('/', '')) != undefined || getManaSymbol(currentManaPrefix + possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined)) ||
-					(textObject.manaPrefix && (getManaSymbol(textObject.manaPrefix + possibleCode.replaceAll('/', '')) != undefined || getManaSymbol(textObject.manaPrefix + possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined)) ||
-					getManaSymbol(possibleCode.replaceAll('/', '')) != undefined || 
-					getManaSymbol(possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined
-				) {
+				} else if (getManaSymbol(possibleCode.replaceAll('/', '')) != undefined || getManaSymbol(possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined) {
 					var possibleCode = possibleCode.replaceAll('/', '');
 					var manaSymbol;
 					// Add symbol to render queue without drawing immediately
-					// Check global prefix first, then textObject prefix, then default
-					if (currentManaPrefix && 
-						(getManaSymbol(currentManaPrefix + possibleCode) != undefined || getManaSymbol(currentManaPrefix + possibleCode.split('').reverse().join('')) != undefined)) {
-						manaSymbol = getManaSymbol(currentManaPrefix + possibleCode) || getManaSymbol(currentManaPrefix + possibleCode.split('').reverse().join(''));
-					} else if (textObject.manaPrefix && 
+					if (textObject.manaPrefix && 
 						(getManaSymbol(textObject.manaPrefix + possibleCode) != undefined || getManaSymbol(textObject.manaPrefix + possibleCode.split('').reverse().join('')) != undefined)) {
 						manaSymbol = getManaSymbol(textObject.manaPrefix + possibleCode) || getManaSymbol(textObject.manaPrefix + possibleCode.split('').reverse().join(''));
 					} else {
@@ -5627,7 +1977,7 @@ function writeText(textObject, targetContext) {
 					var manaSymbolWidth = manaSymbol.width * textSize * 0.78;
 					var manaSymbolHeight = manaSymbol.height * textSize * 0.78;
 					var manaSymbolX = currentX + canvasMargin + manaSymbolSpacing;
-					var manaSymbolY = canvasMargin + textSize * 0.34 - manaSymbolHeight / 2 + (manaSymbol.yOffset * textSize);
+					var manaSymbolY = canvasMargin + textSize * 0.34 - manaSymbolHeight / 2;
 					if (textObject.manaPlacement) {
 						manaSymbolX = scaleWidth(textObject.manaPlacement.x[manaPlacementCounter] || 0) + canvasMargin;
 						manaSymbolY = canvasMargin;
@@ -5680,17 +2030,9 @@ function writeText(textObject, targetContext) {
 						shadowColor: textShadowColor,
 						shadowOffsetX: textShadowOffsetX,
 						shadowOffsetY: textShadowOffsetY,
-						shadowBlur: textShadowBlur,
-						outlineColor: lineContext.strokeStyle
+						shadowBlur: textShadowBlur
 					});
-					// Calculate how much to advance currentX
-					var symbolAdvance = manaSymbolWidth + manaSymbolSpacing * 2;
-					// If symbol has custom spacing defined, use it to adjust the advance
-					if (manaSymbol.spacing !== undefined && manaSymbol.spacing < 0) {
-						// Negative spacing: reduce the advance to create overlap
-						symbolAdvance += manaSymbol.spacing * textSize;
-					}
-					currentX += symbolAdvance;
+					currentX += manaSymbolWidth + manaSymbolSpacing * 2;
 
 					manaSymbolColor = origManaSymbolColor;
 				} else {
@@ -5713,16 +2055,8 @@ function writeText(textObject, targetContext) {
 						var imageToUse = symbolData.symbol.image;
 						var backImageToUse = symbolData.backImage;
 						
-						// Skip if images aren't loaded yet
-						if (!imageToUse || !imageToUse.complete || imageToUse.naturalWidth === 0) {
-							return;
-						}
-						if (backImageToUse && (!backImageToUse.complete || backImageToUse.naturalWidth === 0)) {
-							return;
-						}
-						
-						// For Safari SVGs or cartoony symbols, create a combined canvas first, then apply shadow
-						if ((isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) || symbolData.symbol.image.src?.includes('cartoony/')) {
+						// For Safari, create a combined canvas first, then apply shadow
+						if (isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) {
 							// Create a combined canvas for both symbols
 							var combinedCanvas = document.createElement('canvas');
 							combinedCanvas.width = symbolData.width;
@@ -5789,8 +2123,7 @@ function writeText(textObject, targetContext) {
 				// First pass: Draw outlines only
 				manaSymbolsToRender.forEach(symbolData => {
 					if (!symbolData.hasOutline) return;
-					// Use the outline color from the textbox instead of hardcoded 'black'
-					outlineContext.fillStyle = symbolData.outlineColor || 'black';
+					outlineContext.fillStyle = 'black';
 					outlineContext.beginPath();
 					var centerX = symbolData.x + symbolData.width/2;
 					var centerY = symbolData.y + symbolData.height/2;
@@ -5811,16 +2144,8 @@ function writeText(textObject, targetContext) {
 					var imageToUse = symbolData.symbol.image;
 					var backImageToUse = symbolData.backImage;
 					
-					// Skip if images aren't loaded yet
-					if (!imageToUse || !imageToUse.complete || imageToUse.naturalWidth === 0) {
-						return;
-					}
-					if (backImageToUse && (!backImageToUse.complete || backImageToUse.naturalWidth === 0)) {
-						return;
-					}
-					
-					// For Safari SVGs or cartoony symbols, create a combined canvas first, then apply shadow
-					if ((isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) || symbolData.symbol.image.src?.includes('cartoony/')) {
+					// For Safari, create a combined canvas first, then apply shadow
+					if (isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) {
 						// Create a combined canvas for both symbols
 						var combinedCanvas = document.createElement('canvas');
 						combinedCanvas.width = symbolData.width;
@@ -5923,7 +2248,7 @@ function writeText(textObject, targetContext) {
 					maxSpaceSize: 6,
 					minSpaceSize: 0
 				};
-							//Rotate katakana prolonged sound mark (ー) 90° CW in vertical text
+				//Rotate katakana prolonged sound mark (ー) 90° CW in vertical text
 				var verticalRotateChar = textObject.vertical && wordToWrite === '\u30FC';
 				if (verticalRotateChar) {
 					var charWidth = lineContext.measureText(wordToWrite).width;
@@ -5935,34 +2260,19 @@ function writeText(textObject, targetContext) {
 					lineContext.translate(-centerX, -centerY);
 				}
 				if (textArcRadius > 0) {
-					// For text WITHOUT outline, only draw on fill pass (or if no passes)
-					if (textOutlineWidth <= 0 && isOutlinePass) {
-						// Skip this text during outline pass
-					} else if (textOutlineWidth > 0 && isOutlinePass) {
-						// Draw outline only for arc text
-						lineContext.strokeTextArc(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, textArcRadius, textArcStart, currentX);
-					} else if (isFillPass || (!isOutlinePass && !isFillPass)) {
-						// Draw fill for arc text (in fill pass OR when not doing multi-pass)
-						lineContext.fillTextArc(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, textArcRadius, textArcStart, currentX, 0);
-					}
+					lineContext.fillTextArc(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, textArcRadius, textArcStart, currentX, textOutlineWidth);
 				} else {
-					// For text WITHOUT outline, only draw on fill pass (or if no passes)
-					if (textOutlineWidth <= 0 && isOutlinePass) {
-						// Skip this text during outline pass
-					} else if (textOutlineWidth > 0 && isOutlinePass) {
-						// Draw outline only
+					if (textOutlineWidth >= 1) {
 						if (fillJustify) {
 							lineContext.strokeJustifyText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, justifyWidth, justifySettings);
 						} else {
 							lineContext.strokeText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY);
 						}
-					} else if (isFillPass || (!isOutlinePass && !isFillPass)) {
-						// Draw fill (in fill pass OR when not doing multi-pass)
-						if (fillJustify) {
-							lineContext.fillJustifyText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, justifyWidth, justifySettings);
-						} else {
-							lineContext.fillText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY);
-						}
+					}
+					if (fillJustify) {
+						lineContext.fillJustifyText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, justifyWidth, justifySettings);
+					} else {
+						lineContext.fillText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY);
 					}
 				}
 				if (verticalRotateChar) {
@@ -6027,26 +2337,10 @@ CanvasRenderingContext2D.prototype.fillTextArc = function(text, x, y, radius, st
 	this.rotate(startRotation + widthToAngle(distance, radius));
 	for (var i = 0; i < text.length; i++) {
 		var letter = text[i];
-		// Only draw outline if outlineWidth is specified and > 0
 		if (outlineWidth >= 1) {
 			this.strokeText(letter, 0, -radius);
-		} else {
-			// Only draw fill when outlineWidth is 0
-			this.fillText(letter, 0, -radius);
 		}
-		this.rotate(widthToAngle(this.measureText(letter).width, radius));
-	}
-	this.restore();
-}
-
-// Add a stroke-only version for arc text
-CanvasRenderingContext2D.prototype.strokeTextArc = function(text, x, y, radius, startRotation, distance = 0) {
-	this.save();
-	this.translate(x - distance + scaleWidth(0.5), y + radius);
-	this.rotate(startRotation + widthToAngle(distance, radius));
-	for (var i = 0; i < text.length; i++) {
-		var letter = text[i];
-		this.strokeText(letter, 0, -radius);
+		this.fillText(letter, 0, -radius);
 		this.rotate(widthToAngle(this.measureText(letter).width, radius));
 	}
 	this.restore();
@@ -6184,81 +2478,8 @@ async function addTextbox(textboxType) {
 	}
 }
 //ART TAB
-async function loadLocalArtDropdown(path, subfolder) {	
-	const files = await filesFromFolder(path);	
-
-	const dropdown = document.querySelector('#select-local-art');
-	dropdown.innerHTML = null;	
-
-	const nullOption = document.createElement('option');	
-	dropdown.appendChild(nullOption);
-
-	if (subfolder) {
-		const upOption = document.createElement('option');
-		upOption.value = path.split('/').slice(0, -2).join('/') + '/';
-		upOption.textContent = "↑ Go up";
-		dropdown.appendChild(upOption);
-	}
-
-	files?.forEach(f => {
-		if (f !== '.gitignore') {
-			const option = document.createElement('option');
-			option.textContent = f.endsWith('/') ? '↓ ' + f : f;			
-			option.value = f.endsWith('/') ? path + f : path.replace('/local_art/', '') + f;
-			dropdown.appendChild(option);
-		}
-	});
-
-	if (subfolder) {
-		setTimeout(() => 
-		dropdown.dispatchEvent(new Event('mousedown', {target: dropdown})), 10)
-	}
-}
-
-async function filesFromFolder(path) {
-	const response = await fetch(path);
-
-	if (!response.ok) {
-		console.error('Unable to load local_art', response);
-		return;
-	}
-
-	const list = await response.text();	
-	const folders= [];
-	const files = []
-	list.matchAll(/li><a href=\".*\">(.*)<\/a>/g).map(([_, fileName]) => fileName).forEach(f => {
-		if (f.endsWith('/')) {
-			folders.push(f);
-		} else {
-			files.push(f);
-		}
-	});
-	
-	return [...folders, ...files];
-}
-
-function onLocalArtSelect(path) {
-	if (path == undefined) {
-		uploadArt(blank.src);
-	} else if (path.endsWith('/')) {
-		loadLocalArtDropdown(path, !path.endsWith('/local_art/'));
-	} else {
-		imageURL(path, uploadArt, document.querySelector("#art-update-autofit").checked ? "autoFit" : "");
-	}
-}
-
 function uploadArt(imageSource, otherParams) {
-	art.onerror = function() {
-		notify('Failed to load image. Please try a different URL or upload the file directly.');
-	};
 	ImageLoadTracker.track(imageSource);
-	// Store original URL if it's a Google Drive link (before conversion to object URL)
-	if (typeof imageSource === 'string' && imageSource.includes('drive.google.com/file/d/')) {
-		art.originalSrc = imageSource;
-	} else if (typeof imageSource !== 'string' || !imageSource.startsWith('blob:')) {
-		// Clear originalSrc for non-Google Drive, non-blob URLs
-		delete art.originalSrc;
-	}
 	art.src = imageSource;
 	if (otherParams && otherParams == 'autoFit') {
 		art.onload = function() {
@@ -6292,8 +2513,7 @@ async function pasteArt() {
   }
 }
 function artEdited() {
-	// Use original Google Drive URL if available, otherwise use current src
-	card.artSource = art.originalSrc || art.src;
+	card.artSource = art.src;
 	card.artX = document.querySelector('#art-x').value / card.width;
 	card.artY = document.querySelector('#art-y').value / card.height;
 	card.artZoom = document.querySelector('#art-zoom').value / 100;
@@ -6301,12 +2521,7 @@ function artEdited() {
 	drawCard();
 }
 function autoFitArt() {
-	// Check if artBounds has rotation and preserve it
-	const preserveRotation = card.artBounds && card.artBounds.rotation !== undefined;
-	const rotationToPreserve = preserveRotation ? card.artBounds.rotation : 0;
-	
-	if (document.querySelector("#art-preserve-position")?.checked) return;
-	document.querySelector('#art-rotate').value = rotationToPreserve;
+	document.querySelector('#art-rotate').value = 0;
 	if (art.width / art.height > scaleWidth(card.artBounds.width) / scaleHeight(card.artBounds.height)) {
 		document.querySelector('#art-y').value = Math.round(scaleY(card.artBounds.y) - scaleHeight(card.marginY));
 		document.querySelector('#art-zoom').value = (scaleHeight(card.artBounds.height) / art.height * 100).toFixed(1);
@@ -6477,7 +2692,6 @@ function setSymbolEdited() {
 	card.setSymbolX = document.querySelector('#setSymbol-x').value / card.width;
 	card.setSymbolY = document.querySelector('#setSymbol-y').value / card.height;
 	card.setSymbolZoom = document.querySelector('#setSymbol-zoom').value / 100;
-	card.setSymbolRotate = document.querySelector('#setSymbol-rotate').value || 0;
 	drawCard();
 }
 function resetSetSymbol() {
@@ -6486,7 +2700,6 @@ function resetSetSymbol() {
 	}
 	document.querySelector('#setSymbol-x').value = Math.round(scaleX(card.setSymbolBounds.x));
 	document.querySelector('#setSymbol-y').value = Math.round(scaleY(card.setSymbolBounds.y));
-	document.querySelector('#setSymbol-rotate').value = card.setSymbolBounds.rotation || 0;
 	var setSymbolZoom;
 	if (setSymbol.width / setSymbol.height > scaleWidth(card.setSymbolBounds.width) / scaleHeight(card.setSymbolBounds.height)) {
 		setSymbolZoom = (scaleWidth(card.setSymbolBounds.width) / setSymbol.width * 100).toFixed(1);
@@ -6740,9 +2953,6 @@ function setAutoFrame() {
 function setAutofit() {
 	localStorage.setItem('autoFit', document.querySelector('#art-update-autofit').checked);
 }
-function setPreserveArtPosition() {
-	localStorage.setItem('preserveArtPosition', document.querySelector('#art-preserve-position').checked);
-}
 function removeDefaultCollector() {
 	defaultCollector = {}; //{number: year, rarity:'P', setCode:'MTG', lang:'EN', starDot:false};
 	localStorage.removeItem('defaultCollector'); //localStorage.setItem('defaultCollector', JSON.stringify(defaultCollector));
@@ -6766,19 +2976,6 @@ function drawSetSymbol(cardContext, setSymbol, bounds) {
     const symbolHeight = setSymbol.height * card.setSymbolZoom; 
     const x = scaleX(card.setSymbolX);
     const y = scaleY(card.setSymbolY);
-	const rotation = card.setSymbolRotate || 0;
-
-	// Save context for rotation
-	cardContext.save();
-
-	// Apply rotation if needed
-	if (rotation !== 0) {
-		const centerX = x + symbolWidth / 2;
-		const centerY = y + symbolHeight / 2;
-		cardContext.translate(centerX, centerY);
-		cardContext.rotate(Math.PI / 180 * rotation);
-		cardContext.translate(-centerX, -centerY);
-	}
 
     if (bounds.outlineWidth && bounds.outlineWidth > 0) {
         // Create temp canvas for outlined symbol
@@ -6832,7 +3029,6 @@ function drawSetSymbol(cardContext, setSymbol, bounds) {
         // Draw main symbol without outline (simple path)
         cardContext.drawImage(setSymbol, x, y, symbolWidth, symbolHeight);
     }
-	    cardContext.restore();
 }
 //DRAWING THE CARD (putting it all together)
 function drawCard() {
@@ -6841,21 +3037,12 @@ function drawCard() {
 	cardContext.clearRect(0, 0, cardCanvas.width, cardCanvas.height);
 	// art
 	cardContext.save();
-	if (card.artRotate || (card.artBounds && card.artBounds.rotation)) {
-		// Use rotation from artRotate or artBounds.rotation
-		const rotation = card.artRotate || card.artBounds.rotation;
-		// Calculate art center
-		const artCenterX = scaleX(card.artX) + (art.width * card.artZoom) / 2;
-		const artCenterY = scaleY(card.artY) + (art.height * card.artZoom) / 2;
-		// Rotate around center
-		cardContext.translate(artCenterX, artCenterY);
-		cardContext.rotate(Math.PI / 180 * rotation);
-		cardContext.translate(-artCenterX, -artCenterY);
-	}
+	cardContext.translate(scaleX(card.artX), scaleY(card.artY));
+	cardContext.rotate(Math.PI / 180 * (card.artRotate || 0));
 	if (document.querySelector('#grayscale-art').checked) {
-		cardContext.filter = 'grayscale(1)';
+		cardContext.filter='grayscale(1)';
 	}
-	cardContext.drawImage(art, scaleX(card.artX), scaleY(card.artY), art.width * card.artZoom, art.height * card.artZoom);
+	cardContext.drawImage(art, 0, 0, art.width * card.artZoom, art.height * card.artZoom);
 	cardContext.restore();
 	// frame elements
 	if (card.version.includes('planeswalker') && typeof planeswalkerPreFrameCanvas !== "undefined") {
@@ -6948,7 +3135,7 @@ function drawCard() {
 	// cutout the corners
 	cardContext.globalCompositeOperation = 'destination-out';
 	if (!card.noCorners && (card.marginX == 0 && card.marginY == 0)) {
-		var w = getStandardWidth();
+		var w = card.version == 'battle' ? 2100 : getStandardWidth();
 
 		cardContext.drawImage(corner, 0, 0, scaleWidth(59/w), scaleWidth(59/w));
 		cardContext.rotate(Math.PI / 2);
@@ -6969,89 +3156,10 @@ function drawCard() {
 	}
 }
 //DOWNLOADING
-// Serialize card data for embedding in image trailer
-async function serializeCardData() {
-	const cardToSerialize = JSON.parse(JSON.stringify(card));
-	// Remove large image objects that are already in the image file
-	cardToSerialize.frames.forEach(frame => {
-		delete frame.image;
-		frame.masks.forEach(mask => delete mask.image);
-	});
-	
-	// Don't embed base64 images - just use a marker for user-uploaded art
-	if (cardToSerialize.artSource) {
-		if (cardToSerialize.artSource.startsWith('data:image/') || 
-		    cardToSerialize.artSource.startsWith('blob:')) {
-			cardToSerialize.artSource = 'user-uploaded';
-		} else if (cardToSerialize.artSource.includes('/img/blank.png')) {
-			delete cardToSerialize.artSource;
-		}
-	}
-	
-	return JSON.stringify(cardToSerialize);
-}
-
-// Embed card data as a trailer in the image blob
-async function embedTrailerInBlob(dataURL, cardData) {
-	return new Promise((resolve) => {
-		// Convert data URL to blob
-		fetch(dataURL).then(res => res.blob()).then(imgBlob => {
-			// Create trailer with version header
-			const trailerMarker = 'CARDCONJURER_DATA_v1:';
-			const trailerBytes = new TextEncoder().encode(trailerMarker + cardData);
-			
-			// Create new blob with image + trailer
-			const finalBlob = new Blob([imgBlob, trailerBytes], { type: imgBlob.type });
-			
-			// Convert back to data URL for download
-			const reader = new FileReader();
-			reader.onload = function(e) {
-				resolve(e.target.result);
-			};
-			reader.readAsDataURL(finalBlob);
-		});
-	});
-}
-
-// Extract trailer data from blob/file
-async function extractTrailerData(blob) {
-	return new Promise((resolve) => {
-		const reader = new FileReader();
-		reader.onload = function(e) {
-			const arrayBuffer = e.target.result;
-			const view = new Uint8Array(arrayBuffer);
-			
-			// Convert to string and search for trailer marker
-			const fullString = new TextDecoder().decode(view);
-			const markerIndex = fullString.lastIndexOf('CARDCONJURER_DATA_v1:');
-			
-			if (markerIndex !== -1) {
-				const trailerString = fullString.substring(markerIndex + 21); // 21 = length of marker
-				try {
-					const cardData = JSON.parse(trailerString);
-					resolve(cardData);
-				} catch (e) {
-					resolve(null);
-				}
-			} else {
-				resolve(null);
-			}
-		};
-		reader.readAsArrayBuffer(blob);
-	});
-}
-
-async function downloadCard(alt = false, jpeg = false) {
+function downloadCard(alt = false, jpeg = false) {
 	if (card.infoArtist.replace(/ /g, '') == '' && !card.artSource.includes('/img/blank.png') && !card.artZoom == 0) {
 		notify('You must credit an artist before downloading!', 5);
 	} else {
-        // Block download if no margin unless overridden
-        var shouldWarnNoMargin = localStorage.getItem('warnNoMargin') !== 'true';
-        if (shouldWarnNoMargin && card.marginX === 0 && card.marginY === 0) {
-            notify('Downloading blocked: Card has no margin. Consider using 1/8 Inch Margin in the first dropdown (this card will not work with MakePlayingCards or MPCFill). Check the box "Allow Downloading Without Margin" to disable this warning.', 5);
-            return;
-        }
-
 		// Prep file information
 		var imageDataURL;
 		var imageName = getCardName();
@@ -7062,11 +3170,7 @@ async function downloadCard(alt = false, jpeg = false) {
 			imageDataURL = cardCanvas.toDataURL('image/png');
 			imageName = imageName + '.png';
 		}
-		
-		// Embed card data as trailer
-		imageDataURL = await embedTrailerInBlob(imageDataURL, await serializeCardData());
-		
-		// Download image with embedded trailer
+		// Download image
 		if (alt) {
 			const newWindow = window.open('about:blank');
 			setTimeout(function(){
@@ -8217,39 +4321,9 @@ else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('Station'
 	if (card.version.includes('planeswalker')) {
 		card.text.loyalty.text = cardToImport.loyalty || '';
 		var planeswalkerAbilities = cardToImport.oracle_text.split('\n');
-		
-		// Combine lines at the beginning that don't have loyalty costs into the first ability
-		var processedAbilities = [];
-		var staticAbility = [];
-		for (var i = 0; i < planeswalkerAbilities.length; i++) {
-			var line = planeswalkerAbilities[i];
-			// Check if line has a loyalty cost pattern: [+/-/−][number/X]: or [0]:
-			// This matches things like "+1:", "−7:", "0:", "-X:", "+X:", etc. at the start of the line
-			var hasLoyaltyCost = /^[+\-−0][\dX]*\s*:/.test(line.trim()) || /^\[[+\-−0][\dX]*\]/.test(line.trim());
-			
-			if (hasLoyaltyCost) {
-				// This is a loyalty ability
-				if (staticAbility.length > 0) {
-					// Combine all static lines into first ability
-					processedAbilities.push(staticAbility.join('\n'));
-					staticAbility = [];
-				}
-				processedAbilities.push(line);
-			} else {
-				// This is a static ability or triggered ability (no loyalty cost)
-				staticAbility.push(line);
-			}
-		}
-		// If there are remaining static abilities, add them
-		if (staticAbility.length > 0) {
-			processedAbilities.push(staticAbility.join('\n'));
-		}
-		
-		planeswalkerAbilities = processedAbilities;
-		
-		// Replace loyalty ability brackets [+1], [-2], [-X], etc. with curly brackets for each ability
+		// Replace loyalty ability brackets [+1], [-2], etc. with curly brackets for each ability
 		planeswalkerAbilities = planeswalkerAbilities.map(ability => {
-			return ability.replace(/\[([+\-−][\dX]+)\]/g, function(match, number) {
+			return ability.replace(/\[([+\-−]\d+)\]/g, function(match, number) {
 				return '{' + number.replace('\u2212', '-') + '}';
 			});
 		});
@@ -8259,33 +4333,23 @@ else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('Station'
 		}
 		for (var i = 0; i < 4; i ++) {
 			if (planeswalkerAbilities[i]) {
-				var abilityText = planeswalkerAbilities[i];
-				var loyaltyCost = '';
-				var abilityContent = abilityText;
-				
-				// Extract loyalty cost from the beginning of the line only (supports -X, +X, numbers, etc.)
-				var loyaltyCostMatch = abilityText.match(/^([+\-−0][\dX]*)\s*:\s*/);
-				if (loyaltyCostMatch) {
-					loyaltyCost = loyaltyCostMatch[1].replace('\u2212', '-');
-					abilityContent = abilityText.substring(loyaltyCostMatch[0].length);
+				var planeswalkerAbility = planeswalkerAbilities[i].replace(': ', 'splitstring').split('splitstring');
+				if (!planeswalkerAbility[1]) {
+					planeswalkerAbility = ['', planeswalkerAbility[0]];
 				}
-				
-				card.text['ability' + i].text = abilityContent.replace('(', '{i}(').replace(')', '){/i}');
+				card.text['ability' + i].text = planeswalkerAbility[1].replace('(', '{i}(').replace(')', '){/i}');
 				if (card.version == 'planeswalkerTall' || card.version == 'planeswalkerCompleated') {
 					document.querySelector('#planeswalker-height-' + i).value = Math.round(scaleHeight(0.3572) / planeswalkerAbilities.length);
 				} else {
 					document.querySelector('#planeswalker-height-' + i).value = Math.round(scaleHeight(0.2915) / planeswalkerAbilities.length);
 				}
-				document.querySelector('#planeswalker-cost-' + i).value = loyaltyCost;
+				document.querySelector('#planeswalker-cost-' + i).value = planeswalkerAbility[0].replace('\u2212', '-');
 			} else {
 				card.text['ability' + i].text = '';
 				document.querySelector('#planeswalker-height-' + i).value = 0;
 			}
 		}
 		planeswalkerEdited();
-		if (typeof updatePlaneswalkerAbilityHeights === 'function') {
-			updatePlaneswalkerAbilityHeights();
-		}
 	} else if (card.version.includes('saga')) {
 		if (card.text.rules2) {
 			const combinedText = [cardToImport.flavor_text, ...(cardToImport.keywords || [])]
@@ -8441,8 +4505,6 @@ function saveCard(saveFromFile) {
 			delete frame.image;
 			frame.masks.forEach(mask => delete mask.image);
 		});
-		// Save custom mana selector value
-		cardToSave.customManaSet = document.querySelector('#custom-mana-selector').value || '';
 	}
 	try {
 		localStorage.setItem(cardKey, JSON.stringify(cardToSave));
@@ -8479,18 +4541,10 @@ async function loadCard(selectedCardKey) {
 		document.querySelector('#art-y').value = scaleY(card.artY) - scaleHeight(card.marginY);
 		document.querySelector('#art-zoom').value = card.artZoom * 100;
 		document.querySelector('#art-rotate').value = card.artRotate || 0;
-		// Load art if it's a valid URL, otherwise use blank
-		if (card.artSource && card.artSource !== 'user-uploaded') {
-			uploadArt(card.artSource);
-		} else {
-			// User-uploaded art is not available, or no art specified - use blank
-			uploadArt(fixUri('/img/blank.png'));
-			card.artSource = fixUri('/img/blank.png');
-		}
+		uploadArt(card.artSource);
 		document.querySelector('#setSymbol-x').value = scaleX(card.setSymbolX) - scaleWidth(card.marginX);
 		document.querySelector('#setSymbol-y').value = scaleY(card.setSymbolY) - scaleHeight(card.marginY);
 		document.querySelector('#setSymbol-zoom').value = card.setSymbolZoom * 100;
-		document.querySelector('#setSymbol-rotate').value = card.setSymbolRotate || 0;
 		uploadSetSymbol(card.setSymbolSource);
 		document.querySelector('#watermark-x').value = scaleX(card.watermarkX) - scaleWidth(card.marginX);
 		document.querySelector('#watermark-y').value = scaleY(card.watermarkY) - scaleHeight(card.marginY);
@@ -8500,32 +4554,12 @@ async function loadCard(selectedCardKey) {
 		document.querySelector('#watermark-opacity').value = card.watermarkOpacity * 100;
 		document.getElementById("rounded-corners").checked = !card.noCorners;
 		uploadWatermark(card.watermarkSource);
-		document.querySelector('#serial-number').value = card.serialNumber || '';
-		document.querySelector('#serial-total').value = card.serialTotal || '';
-		document.querySelector('#serial-x').value = card.serialX || 0;
-		document.querySelector('#serial-y').value = card.serialY || 0;
-		document.querySelector('#serial-scale').value = card.serialScale || 1;
-		document.querySelector('#select-local-art').value = null;
+		document.querySelector('#serial-number').value = card.serialNumber;
+		document.querySelector('#serial-total').value = card.serialTotal;
+		document.querySelector('#serial-x').value = card.serialX;
+		document.querySelector('#serial-y').value = card.serialY;
+		document.querySelector('#serial-scale').value = card.serialScale;
 		serialInfoEdited();
-		// Restore custom mana selector
-		if (card.customManaSet !== undefined) {
-			const selector = document.querySelector('#custom-mana-selector');
-			
-			// Check if it's a built-in set or if the custom set still exists
-			const isBuiltIn = card.customManaSet.startsWith('builtin:');
-			const isCustomAndExists = !isBuiltIn && customManaSets.has(card.customManaSet);
-			
-			if (isBuiltIn || isCustomAndExists) {
-				// Set exists, restore it
-				selector.value = card.customManaSet;
-				selectCustomManaSet(card.customManaSet);
-			} else if (card.customManaSet !== '') {
-				// Custom set no longer exists, reset to default and notify user
-				selector.value = '';
-				currentManaPrefix = '';
-				notify(`Custom mana set "${card.customManaSet}" is not available. Using default mana symbols.`, 5);
-			}
-		}
 
 		card.frames.reverse();
 		await card.frames.forEach(item => addFrame([], item));
@@ -8586,72 +4620,12 @@ async function downloadSavedCards() {
 		download.remove();
 	}
 }
-async function uploadSavedCards(event) {
-	const file = event.target.files[0];
-	if (!file) return;
-	
+function uploadSavedCards(event) {
 	var reader = new FileReader();
-	
-	// Check if file is an image with embedded trailer data
-	if (file.type.startsWith('image/')) {
-		const cardData = await extractTrailerData(file);
-		if (cardData && cardData.frames) {
-			// Extract card name from the imported data
-			let cardName = 'unnamed';
-			if (cardData.text && cardData.text.title) {
-				cardName = cardData.text.title.text || 'unnamed';
-				if (cardData.text.nickname) {
-					cardName += ' (' + cardData.text.nickname.text + ')';
-				}
-				cardName = cardName.replace(/\{[^}]+\}/g, ''); // Remove formatting codes
-			}
-			
-			// Handle duplicate names automatically
-			var cardKeys = JSON.parse(localStorage.getItem('cardKeys')) || [];
-			var finalCardName = cardName;
-			if (cardKeys.includes(finalCardName)) {
-				var originalCardName = cardName;
-				var cardNameNumber = 1;
-				while (cardKeys.includes(finalCardName)) {
-					finalCardName = originalCardName + ' (' + cardNameNumber + ')';
-					cardNameNumber++;
-				}
-			}
-			
-			// Single card object
-			saveCard({key: finalCardName, data: cardData});
-			// Load the card to display it in the editor
-			await loadCard(finalCardName);
-			document.querySelector('#load-card-options').value = finalCardName;
-			notify('Card imported and loaded!', 3);
-		} else if (cardData) {
-			// Has data but wrong format
-			notify('This image contains Card Conjurer save data, but it does not appear to be in the expected format.', 5);
-		} else {
-			// No card data found
-			notify('This image does not contain Card Conjurer save data', 5);
-		}
-		return;
-	}
-	
-	// Otherwise, treat as text file (traditional .cardconjurer format)
 	reader.onload = function () {
-		try {
-			const parsedData = JSON.parse(reader.result);
-			if (Array.isArray(parsedData)) {
-				parsedData.forEach(item => saveCard(item));
-				notify('Cards imported successfully!', 3);
-			} else {
-				notify('Invalid file format. Expected an array of cards.', 5);
-			}
-		} catch (error) {
-			notify('Failed to parse file. Please ensure it is a valid Card Conjurer save file.', 5);
-		}
+		JSON.parse(reader.result).forEach(item => saveCard(item));
 	}
-	reader.onerror = function () {
-		notify('Failed to read file', 5);
-	}
-	reader.readAsText(file);
+	reader.readAsText(event.target.files[0]);
 }
 //TUTORIAL TAB
 function loadTutorialVideo() {
@@ -8736,11 +4710,8 @@ function setRoundedCorners(value) {
 	card.noCorners = !value;
 	drawCard();
 }
-function setWarnNoMargin(value) {
-    localStorage.setItem('warnNoMargin', value);
-}
 //Various loaders
-async function imageURL(url, destination, otherParams) {
+function imageURL(url, destination, otherParams) {
 	var imageurl = url;
 	// If an image URL does not have HTTP in it, assume it's a local file in the repo local_art directory.
 	if (!url.includes('http')) {
@@ -8748,28 +4719,19 @@ async function imageURL(url, destination, otherParams) {
 	} else if (params.get('noproxy') != '') {
 		//CORS PROXY LINKS
 		//Previously: https://cors.bridged.cc/
-		imageurl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+		imageurl = 'https://corsproxy.io/?url=' + encodeURIComponent(url);
 	}
 	destination(imageurl, otherParams);
 }
 async function imageLocal(event, destination, otherParams) {
 	var reader = new FileReader();
-	const file = event.target.files[0];
-	
-	reader.onload = async function () {
-		// Check if this is an image file with potential trailer data
-		if (file && file.type.startsWith('image/')) {
-			const cardData = await extractTrailerData(file);
-			if (cardData && confirm('This image contains Card Conjurer save data. Import it?\n\n(Cancel to just use the image)')) {
-				importCard(cardData);
-				notify('Card loaded from image!', 3);
-				return;
-			}
-		}
+	reader.onload = function () {
 		destination(reader.result, otherParams);
 	}
-	reader.onerror = () => destination('/img/blank.png', otherParams);
-	await reader.readAsDataURL(file);
+	reader.onerror = function () {
+		destination('/img/blank.png', otherParams);
+	}
+	await reader.readAsDataURL(event.target.files[0]);
 }
 function loadScript(scriptPath) {
 	return new Promise((resolve, reject) => {
@@ -8969,20 +4931,6 @@ function toggleHighRes() {
 	drawCard();
 }
 
-function keepCardInView() {	
-	document.onscroll = () => {
-		if (window.innerHeight > previewCanvas.offsetHeight && window.innerWidth >= 1250) {
-			previewCanvas.style.marginTop = `${Math.max(window.scrollY - 141, 0)}px`;
-		}		
-	}
-	
-	window.onresize = () => {
-		if (window.innerWidth < 1250) {
-			previewCanvas.style.marginTop = 0;
-		}
-	}
-}
-
 // INITIALIZATION
 
 // auto load frame version (user defaults)
@@ -9056,12 +5004,6 @@ if (document.querySelector('#lockSetSymbolURL').checked) {
 	setSymbol.src = localStorage.getItem('lockSetSymbolURL');
 }
 
-// Initialize warn no margin checkbox (defaults to unchecked, meaning warnings are shown)
-if (!localStorage.getItem('warnNoMargin')) {
-    localStorage.setItem('warnNoMargin', 'false');
-}
-document.querySelector('#warn-no-margin').checked = localStorage.getItem('warnNoMargin') === 'true';
-
 //bind inputs together
 bindInputs('#frame-editor-hsl-hue', '#frame-editor-hsl-hue-slider');
 bindInputs('#frame-editor-hsl-saturation', '#frame-editor-hsl-saturation-slider');
@@ -9073,5 +5015,3 @@ loadScript('/js/frames/groupStandard-3.js');
 loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
 loadAvailableCards();
 initDraggableArt();
-keepCardInView();
-loadLocalArtDropdown('/local_art/');
