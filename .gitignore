@@ -34,3 +34,6 @@ access.log
 error.log
 
 fly.toml
+
+# fuzzy specific
+readmefuzzy.txt
