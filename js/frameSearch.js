@@ -178,6 +178,11 @@ const frameNames = new Map ([
 	['DFC Floating Legend Crowns', 'TransformLegendCrownsFloating'],
 	['DFC Floating Legend Crowns (Back/Right)', 'TransformLegendCrownsFloatingBackRight'],
 	['DFC Nickname Legend Crowns', 'TransformLegendCrownsNickname'],
+	['Transform Addon Arrows', 'TransformAddonMDFC'],
+	['Transform Addon Arrows (Universes Beyond)', 'TransformAddonMDFCUB'],
+	['Transform Addon Arrows (Borderless)', 'TransformAddonMDFCBorderless'],
+	['Transform Addon Arrows (Snow)', 'TransformAddonMDFCSnow'],
+	['Transform Addon Arrows (Extended Art)', 'TransformAddonMDFCExtended'],
 	['Neon Ink Transform (Front) (TLA)', 'NeonInkTransformFront'],
 	['Neon Ink Transform (Back) (TLA)', 'NeonInkTransformBack'],
 	//modal
