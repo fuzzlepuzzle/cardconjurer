@@ -5972,6 +5972,69 @@ async function addTextbox(textboxType) {
 	}
 }
 //ART TAB
+async function loadLocalArtDropdown(path, subfolder) {	
+	const files = await filesFromFolder(path);	
+
+	const dropdown = document.querySelector('#select-local-art');
+	dropdown.innerHTML = null;	
+
+	const nullOption = document.createElement('option');	
+	dropdown.appendChild(nullOption);
+
+	if (subfolder) {
+		const upOption = document.createElement('option');
+		upOption.value = path.split('/').slice(0, -2).join('/') + '/';
+		upOption.textContent = "↑ Go up";
+		dropdown.appendChild(upOption);
+	}
+
+	files?.forEach(f => {
+		if (f !== '.gitignore') {
+			const option = document.createElement('option');
+			option.textContent = f.endsWith('/') ? '↓ ' + f : f;			
+			option.value = f.endsWith('/') ? path + f : path.replace('/local_art/', '') + f;
+			dropdown.appendChild(option);
+		}
+	});
+
+	if (subfolder) {
+		setTimeout(() => 
+		dropdown.dispatchEvent(new Event('mousedown', {target: dropdown})), 10)
+	}
+}
+
+async function filesFromFolder(path) {
+	const response = await fetch(path);
+
+	if (!response.ok) {
+		console.error('Unable to load local_art', response);
+		return;
+	}
+
+	const list = await response.text();	
+	const folders= [];
+	const files = []
+	list.matchAll(/li><a href=\".*\">(.*)<\/a>/g).map(([_, fileName]) => fileName).forEach(f => {
+		if (f.endsWith('/')) {
+			folders.push(f);
+		} else {
+			files.push(f);
+		}
+	});
+	
+	return [...folders, ...files];
+}
+
+function onLocalArtSelect(path) {
+	if (path == undefined) {
+		uploadArt(blank.src);
+	} else if (path.endsWith('/')) {
+		loadLocalArtDropdown(path, !path.endsWith('/local_art/'));
+	} else {
+		imageURL(path, uploadArt, document.querySelector("#art-update-autofit").checked ? "autoFit" : "");
+	}
+}
+
 function uploadArt(imageSource, otherParams) {
 	art.onerror = function() {
 		notify('Failed to load image. Please try a different URL or upload the file directly.');
@@ -8184,6 +8247,7 @@ async function loadCard(selectedCardKey) {
 		document.querySelector('#serial-x').value = card.serialX || 0;
 		document.querySelector('#serial-y').value = card.serialY || 0;
 		document.querySelector('#serial-scale').value = card.serialScale || 1;
+		document.querySelector('#select-local-art').value = null;
 		serialInfoEdited();
 
 		card.frames.reverse();
@@ -8718,3 +8782,4 @@ loadScript('/js/frames/groupStandard-3.js');
 loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
 loadAvailableCards();
 initDraggableArt();
+loadLocalArtDropdown('/local_art/');
