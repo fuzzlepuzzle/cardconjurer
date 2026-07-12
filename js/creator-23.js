@@ -145,7 +145,7 @@ window.FontLoadTracker = {
 };
 
 //card object
-var card = {width:getStandardWidth(), height:getStandardHeight(), marginX:0, marginY:0, frames:[], artSource:fixUri('/img/blank.png'), artX:0, artY:0, artZoom:1, artRotate:0, setSymbolSource:fixUri('/img/blank.png'), setSymbolX:0, setSymbolY:0, setSymbolZoom:1, watermarkSource:fixUri('/img/blank.png'), watermarkX:0, watermarkY:0, watermarkZoom:1, watermarkLeft:'none', watermarkRight:'none', watermarkOpacity:0.4, version:'', manaSymbols:[]};
+var card = {width:getStandardWidth(), height:getStandardHeight(), marginX:0, marginY:0, frames:[], artSource:fixUri('/img/blank.png'), artX:0, artY:0, artZoom:1, artRotate:0, setSymbolSource:fixUri('/img/blank.png'), setSymbolX:0, setSymbolY:0, setSymbolZoom:1, setSymbolRotate:0, watermarkSource:fixUri('/img/blank.png'), watermarkX:0, watermarkY:0, watermarkZoom:1, watermarkLeft:'none', watermarkRight:'none', watermarkOpacity:0.4, version:'', manaSymbols:[]};
 window.cardDrawingPromiseResolver = null;
 //core images/masks
 const black = new Image(); black.crossOrigin = 'anonymous'; black.src = fixUri('/img/black.png');
@@ -407,6 +407,25 @@ function dragOver(event, drag=true) {
 			var originalMovingElement = card.frames[movingElementOldIndex];
 			card.frames.splice(movingElementOldIndex, 1);
 			card.frames.splice(movingElementNewIndex, 0, originalMovingElement);
+			
+			// Update preserveAlpha for frames that support it based on their new positions
+			card.frames.forEach((frame, index) => {
+				// Only update frames that were defined with preserveAlpha support
+				if (frame.supportsPreserveAlpha) {
+					// If frame is at the bottom (last index), disable preserveAlpha
+					if (index === card.frames.length - 1) {
+						delete frame.preserveAlpha;
+					} else {
+						// If frame is not at the bottom, enable preserveAlpha
+						frame.preserveAlpha = true;
+					}
+				}
+			});
+			
+			// Update all frame labels to reflect the new preserveAlpha states
+			updateAllFrameLabels();
+			
+
 			drawFrames();
 		}
 	}
@@ -425,17 +444,18 @@ loadManaSymbols(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '
 loadManaSymbols(true, ['e', 'a', 'p']);
 loadManaSymbols(['wu', 'wb', 'ub', 'ur', 'br', 'bg', 'rg', 'rw', 'gw', 'gu', '2w', '2u', '2b', '2r', '2g', 'wp', 'up', 'bp', 'rp', 'gp', 'h',
 				 'wup', 'wbp', 'ubp', 'urp', 'brp', 'bgp', 'rgp', 'rwp', 'gwp', 'gup', 'purplew', 'purpleu', 'purpleb', 'purpler', 'purpleg',
-				 '2purple', 'purplep', 'cw', 'cu', 'cb', 'cr', 'cg'], [1.2, 1.2]);
+				 '2purple', 'purplep', 'cw', 'cu', 'cb', 'cr', 'cg'], [1.2, 1.2, 0.03]);
 loadManaSymbols(['bar.png', 'whitebar.png']);
 loadManaSymbols(['brush', 'whitebrush'], [2.85, 2.85]);
-loadManaSymbols(['xxbgw', 'xxbrg', 'xxgub', 'xxgwu', 'xxrgw', 'xxrwu', 'xxubr', 'xxurg', 'xxwbr', 'xxwub'], [1.2, 1.2]);
+loadManaSymbols(['xxbgw', 'xxbrg', 'xxgub', 'xxgwu', 'xxrgw', 'xxrwu', 'xxubr', 'xxurg', 'xxwbr', 'xxwub'], [1.2, 1.2, 0.03]);
 loadManaSymbols(true, ['chaos'], [1.2, 1]);
 loadManaSymbols(true, ['tk'], [0.8, 1]);
 loadManaSymbols(true, ['planeswalker'], [0.6, 1.2]);
 loadManaSymbols(true, ['+1', '+2', '+3', '+4', '+5', '+6', '+7', '+8', '+9', '-1', '-2', '-3', '-4', '-5', '-6', '-7', '-8', '-9', '+0'], [1.6, 1]);
-function loadManaSymbols(matchColor, manaSymbolPaths, size = [1, 1]) {
+function loadManaSymbols(matchColor, manaSymbolPaths, size = [1, 1], spacing = 1) {
 	if (typeof matchColor === 'object') {
 		// Hacky way to add a default argument for matchColor without breaking the function call from other places
+		spacing = size || 1;
 		size = manaSymbolPaths || [1,1];
 		manaSymbolPaths = matchColor;
 		matchColor = false;
@@ -466,6 +486,8 @@ function loadManaSymbols(matchColor, manaSymbolPaths, size = [1, 1]) {
 
 		manaSymbol.width = size[0];
 		manaSymbol.height = size[1];
+		manaSymbol.yOffset = size[2] || 0;
+		manaSymbol.spacing = spacing;
 		manaSymbol.image = new Image();
 		manaSymbol.image.crossOrigin = 'anonymous';
 		var manaSymbolPath = '/img/manaSymbols/' + manaSymbol.path;
@@ -866,6 +888,12 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 	var frameToAdd = JSON.parse(JSON.stringify(availableFrames[selectedFrameIndex]));
 	var maskThumbnail = true;
 	if (!loadingFrame) {
+		// Store the available masks from the frame pack for later use in the editor
+		if (availableFrames[selectedFrameIndex] && availableFrames[selectedFrameIndex].masks) {
+			frameToAdd.availableMasks = JSON.parse(JSON.stringify(availableFrames[selectedFrameIndex].masks));
+		} else {
+			frameToAdd.availableMasks = [];
+		}
 		// The frame is being added manually by the user, so we must process which mask(s) they have selected
 		var noDefaultMask = 0;
 		if (frameToAdd.noDefaultMask) {noDefaultMask = 1;}
@@ -937,6 +965,25 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 		frameToAdd.image.src = fixUri(frameToAdd.src);
 	}
 	if (!loadingFrame) {
+		// Check if this frame should have preserveAlpha enabled by default
+		// This applies when a frame:
+		// 1. Has masks
+		// 2. Is not the bottom layer (card.frames.length > 0 means there are already frames)
+		// 3. Has preserveAlpha set to true in the frame pack definition
+		if (frameToAdd.preserveAlpha === true && frameToAdd.masks && frameToAdd.masks.length > 0) {
+			// Track that this frame supports preserveAlpha management
+			frameToAdd.supportsPreserveAlpha = true;
+			if (card.frames.length > 0) {
+				// Keep preserveAlpha as true if not the bottom layer
+				frameToAdd.preserveAlpha = true;
+			} else {
+				// Remove preserveAlpha if it's the first frame
+				delete frameToAdd.preserveAlpha;
+			}
+		} else {
+			// Remove preserveAlpha if conditions aren't met
+			delete frameToAdd.preserveAlpha;
+		}
 		card.frames.unshift(frameToAdd);
 	}
 	var frameElement = document.createElement('div');
@@ -965,6 +1012,12 @@ async function addFrame(additionalMasks = [], loadingFrame = false) {
 	frameElement.appendChild(frameElementMask);
 	var frameElementLabel = document.createElement('h4');
 	frameElementLabel.innerHTML = frameToAdd.name;
+	if (frameToAdd.erase) {
+		frameElementLabel.innerHTML += ', Erase Card';
+	}
+	if (frameToAdd.preserveAlpha) {
+		frameElementLabel.innerHTML += ', Preserve Alpha';
+	}
 	frameToAdd.masks.forEach(item => frameElementLabel.innerHTML += ', ' + item.name);
 	frameElement.appendChild(frameElementLabel);
 	var frameElementClose = document.createElement('h4');
@@ -1002,9 +1055,9 @@ function frameElementClicked(event) {
 		document.querySelector('#frame-editor-opacity').value = selectedFrame.opacity || 100;
 		document.querySelector('#frame-editor-opacity').onchange = (event) => {selectedFrame.opacity = event.target.value; drawFrames();}
 		document.querySelector('#frame-editor-erase').checked = selectedFrame.erase || false;
-		document.querySelector('#frame-editor-erase').onchange = (event) => {selectedFrame.erase = event.target.checked; drawFrames();}
+		document.querySelector('#frame-editor-erase').onchange = (event) => {selectedFrame.erase = event.target.checked; drawFrames(); updateFrameLabel();}
 		document.querySelector('#frame-editor-alpha').checked = selectedFrame.preserveAlpha || false;
-		document.querySelector('#frame-editor-alpha').onchange = (event) => {selectedFrame.preserveAlpha = event.target.checked; drawFrames();}
+		document.querySelector('#frame-editor-alpha').onchange = (event) => {selectedFrame.preserveAlpha = event.target.checked; drawFrames(); updateFrameLabel();}
 		document.querySelector('#frame-editor-color-overlay-check').checked = selectedFrame.colorOverlayCheck || false;
 		document.querySelector('#frame-editor-color-overlay-check').onchange = (event) => {selectedFrame.colorOverlayCheck = event.target.checked; drawFrames();}
 		document.querySelector('#frame-editor-color-overlay').value = selectedFrame.colorOverlay || false;
@@ -1021,22 +1074,70 @@ function frameElementClicked(event) {
 		document.querySelector('#frame-editor-hsl-lightness-slider').value = selectedFrame.hslLightness || 0;
 		document.querySelector('#frame-editor-hsl-lightness').onchange = (event) => {selectedFrame.hslLightness = event.target.value; drawFrames();}
 		document.querySelector('#frame-editor-hsl-lightness-slider').onchange = (event) => {selectedFrame.hslLightness = event.target.value; drawFrames();}
-		// Removing masks
-		const selectMaskElement = document.querySelector('#frame-editor-masks');
-		selectMaskElement.innerHTML = null;
-		const maskOptionNone = document.createElement('option');
-		maskOptionNone.disabled = true;
-		maskOptionNone.innerHTML = 'None Selected';
-		selectMaskElement.appendChild(maskOptionNone);
-		selectedFrame.masks.forEach(mask => {
-			const maskOption = document.createElement('option');
-			maskOption.innerHTML = mask.name;
-			selectMaskElement.appendChild(maskOption);
-		});
-		selectMaskElement.selectedIndex = 0;
+		// Refresh mask dropdown
+		refreshMaskDropdown();
 	}
 }
+function addMaskToList(list, mask) {
+	if (!list.find(m => m.name === mask.name && m.src === mask.src)) {
+		list.push({name: mask.name, src: mask.src});
+	}
+}
+function buildFrameLabelText(frame) {
+	const parts = [frame.name];
+	if (frame.erase) parts.push('Erase Card');
+	if (frame.preserveAlpha) parts.push('Preserve Alpha');
+	parts.push(...frame.masks.map(m => m.name));
+	return parts.join(', ');
+}
+function updateFrameLabel() {
+	if (!selectedFrame) return;
+	Array.from(document.querySelectorAll('#frame-list .frame-element')).forEach(el => {
+		const frame = card.frames[Array.from(el.parentElement.children).indexOf(el)];
+		if (frame === selectedFrame) {
+			const label = el.querySelector('h4:not(.frame-element-close)');
+			if (label) label.innerHTML = buildFrameLabelText(frame);
+		}
+	});
+}
+function updateAllFrameLabels() {
+	Array.from(document.querySelectorAll('#frame-list .frame-element')).forEach(el => {
+		const frame = card.frames[Array.from(el.parentElement.children).indexOf(el)];
+		const label = el.querySelector('h4:not(.frame-element-close)');
+		if (label && frame) label.innerHTML = buildFrameLabelText(frame);
+	});
+}
+function createMaskObject(name, src, noThumb = false) {
+	const mask = {name, src, image: new Image()};
+	if (noThumb) mask.noThumb = true;
+	mask.image.crossOrigin = 'anonymous';
+	mask.image.onload = drawFrames;
+	mask.image.src = fixUri(src);
+	return mask;
+}
+function refreshMaskDropdown() {
+	if (!selectedFrame) return;
+	// Ensure masks array exists
+	if (!selectedFrame.masks) {
+		selectedFrame.masks = [];
+	}
+	
+	// Refresh "Select and remove masks" dropdown
+	const selectMaskElement = document.querySelector('#frame-editor-masks');
+	selectMaskElement.innerHTML = '';
+	const maskOptionNone = document.createElement('option');
+	maskOptionNone.disabled = true;
+	maskOptionNone.innerHTML = 'None Selected';
+	selectMaskElement.appendChild(maskOptionNone);
+	selectedFrame.masks.forEach(mask => {
+		const maskOption = document.createElement('option');
+		maskOption.innerHTML = mask.name;
+		selectMaskElement.appendChild(maskOption);
+	});
+	selectMaskElement.selectedIndex = 0;
+}
 function frameElementMaskRemoved() {
+	if (!selectedFrame) return;
 	const selectElement = document.querySelector('#frame-editor-masks');
 	const selectedOption = selectElement.value;
 	if (selectedOption != 'None Selected') {
@@ -1045,23 +1146,206 @@ function frameElementMaskRemoved() {
 		selectedFrame.masks.forEach(mask => {
 			if (mask.name == selectedOption) {
 				selectedFrame.masks = selectedFrame.masks.filter(item => item.name != selectedOption);
+
+				// If all masks are removed, disable preserveAlpha management
+				if (selectedFrame.masks.length === 0) {
+					delete selectedFrame.supportsPreserveAlpha;
+					delete selectedFrame.preserveAlpha;
+				}
+				
 				drawFrames();
+				updateFrameLabel();
 			}
 		});
 	}
 }
 function uploadMaskOption(imageSource) {
-	const uploadedMask = {name:`Uploaded Image (${customCount})`, src:imageSource, noThumb:true, image: new Image()};
-	customCount ++;
-	selectedFrame.masks.push(uploadedMask);
-	uploadedMask.image.onload = drawFrames;
-	uploadedMask.image.src = imageSource;
+	if (!selectedFrame) return;
+	customCount++;
+	selectedFrame.masks.push(createMaskObject(`Uploaded Image (${customCount})`, imageSource, true));
+	updateFrameLabel();
+	refreshMaskDropdown();
 }
 function uploadFrameOption(imageSource) {
 	const uploadedFrame = {name:`Uploaded Image (${customCount})`, src:imageSource, noThumb:true};
 	customCount ++;
 	availableFrames.push(uploadedFrame);
 	loadFramePack();
+}
+//CUSTOM MANA SYMBOLS
+const customManaSets = new Map();
+let customManaCount = 0;
+let currentManaPrefix = ''; // Global prefix that applies to all text boxes
+
+// Built-in custom mana symbol sets
+const builtInManaSets = [
+	{name: 'Breaking News', prefix: 'breakingNews', script: '/js/frames/manaSymbolsBreakingNews.js'},
+	{name: 'Cartoony', prefix: 'c', script: '/js/frames/manaSymbolsCartoony.js'},
+	{name: 'FAB', prefix: 'fab', script: '/js/frames/manaSymbolsFAB.js'},
+	{name: 'Future', prefix: 'f', script: '/js/frames/manaSymbolsFuture.js'},
+	{name: 'M21', prefix: 'm21', script: '/js/frames/manaSymbolsM21.js'},
+	{name: 'Mystical Archive JP', prefix: 'majp', script: '/js/frames/manaSymbolsMysticalArchiveJP.js'},
+	{name: 'Neon', prefix: 'neon', script: '/js/frames/manaSymbolsNeon.js'},
+	{name: 'Oil Slick', prefix: 'oilslick', script: '/js/frames/manaSymbolsOilSlick.js'},
+	{name: 'Old', prefix: 'old', script: '/js/frames/manaSymbolsOld.js'},
+	{name: 'Outline', prefix: 'outline', script: '/js/frames/manaSymbolsOutline.js'},
+	{name: 'Outline Alt', prefix: 'outlineAlt', script: '/js/frames/manaSymbolsOutlineAlt.js'},
+	{name: 'Pokemon', prefix: 'pokemon', script: '/js/frames/manaSymbolsPokemon.js'},
+	{name: 'Wanted', prefix: 'wanted', script: '/js/frames/manaSymbolsWanted.js'}
+];
+
+function populateManaSetsDropdown() {
+	const selector = document.querySelector('#custom-mana-selector');
+	if (!selector) return;
+	
+	// Check if already populated (more than just the default option)
+	if (selector.options.length > 1) return;
+	
+	// Add built-in sets
+	builtInManaSets.forEach(set => {
+		const option = document.createElement('option');
+		option.value = 'builtin:' + set.prefix;
+		option.textContent = set.name;
+		selector.appendChild(option);
+	});
+}
+function uploadCustomManaFolder(files) {
+	if (files.length === 0) return;
+	
+	// Get folder name from the first file's webkitRelativePath
+	const firstFile = files[0];
+	let folderName = 'Custom Set ' + (++customManaCount);
+	if (firstFile.webkitRelativePath) {
+		const pathParts = firstFile.webkitRelativePath.split('/');
+		if (pathParts.length > 1) {
+			folderName = pathParts[0];
+		}
+	}
+	
+	const setName = folderName;
+	const prefix = `custom${customManaCount}`;
+	const manaImages = new Map();
+	
+	// Standard mana symbol names we're looking for
+	const standardSymbols = ['w', 'u', 'b', 'r', 'g', 'c', 'cc', 's', 'x', 't', 
+		'wu', 'wb', 'ub', 'ur', 'br', 'bg', 'rg', 'rw', 'gw', 'gu',
+		'wp', 'up', 'bp', 'rp', 'gp', 'cp', 
+		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 
+		'10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
+		'y', 'z', 'q', 'e', 'chaos', 'pw', 'energy', 'acorn', 'halfwhite',
+		'half', 'tap', 'untap', 'snow'];
+	
+	// Process each file
+	Array.from(files).forEach(file => {
+		if (!file.type.startsWith('image/')) return;
+		
+		// Extract the mana symbol name from filename (without extension)
+		const fileName = file.name.split('.')[0].toLowerCase();
+		
+		// Try to find which standard symbol this file represents
+		// Look for the symbol at the end of the filename
+		let symbolName = null;
+		for (const symbol of standardSymbols) {
+			if (fileName.endsWith(symbol)) {
+				symbolName = symbol;
+				break;
+			}
+		}
+		
+		// If we couldn't identify the symbol, use the full filename
+		if (!symbolName) {
+			symbolName = fileName;
+		}
+		
+		// Read the file
+		const reader = new FileReader();
+		reader.onload = function(e) {
+			manaImages.set(symbolName, e.target.result);
+			
+			// When all images are loaded, save the set
+			if (manaImages.size === Array.from(files).filter(f => f.type.startsWith('image/')).length) {
+				customManaSets.set(setName, {
+					name: setName,
+					prefix: prefix,
+					images: manaImages
+				});
+				
+				// Add to dropdown
+				const selector = document.querySelector('#custom-mana-selector');
+				const option = document.createElement('option');
+				option.value = setName;
+				option.textContent = setName;
+				selector.appendChild(option);
+				
+				// Automatically select the newly uploaded set
+				selector.value = setName;
+				selectCustomManaSet(setName);
+				
+				notify(`Custom mana set "${setName}" loaded with ${manaImages.size} symbols`, 3);
+			}
+		};
+		reader.readAsDataURL(file);
+	});
+}
+
+function selectCustomManaSet(setName) {
+	if (!setName || setName === '') {
+		// Reset to default mana symbols
+		currentManaPrefix = '';
+	} else if (setName.startsWith('builtin:')) {
+		// Handle built-in mana symbol sets
+		const prefix = setName.replace('builtin:', '');
+		const builtInSet = builtInManaSets.find(s => s.prefix === prefix);
+		
+		if (builtInSet) {
+			// Set the global mana prefix
+			currentManaPrefix = builtInSet.prefix;
+			
+			// Load the mana symbols script if not already loaded
+			if (!card.manaSymbols.includes(builtInSet.script)) {
+				loadScript(builtInSet.script);
+			}
+		}
+	} else {
+		// Handle user-uploaded custom sets
+		const customSet = customManaSets.get(setName);
+		if (customSet) {
+			// Set the global mana prefix
+			currentManaPrefix = customSet.prefix;
+			
+			// Load the custom mana symbols into the mana Map
+			loadCustomManaSymbols(customSet);
+		}
+	}
+	
+	// Redraw text with new mana symbols
+	drawTextBuffer();
+}
+function loadCustomManaSymbols(customSet) {
+	// Check if already loaded
+	if (mana.get(customSet.prefix + 'w')) {
+		return; // Already loaded
+	}
+	
+	// Load each image from the custom set
+	// symbolName is like 'w', 'u', 'b', etc.
+	// We store them as 'custom1w', 'custom1u', 'custom1b', etc.
+	customSet.images.forEach((imageData, symbolName) => {
+		const fullName = customSet.prefix + symbolName;
+		
+		const manaSymbol = {
+			name: fullName,
+			path: imageData,
+			matchColor: false,
+			width: 1,
+			height: 1,
+			yOffset: 0,
+			image: new Image()
+		};
+		
+		manaSymbol.image.src = imageData;
+		mana.set(fullName, manaSymbol);
+	});
 }
 function hsl(canvas, inputH, inputS, inputL) {
 	//adjust inputs
@@ -1202,6 +1486,7 @@ function loadTextOptions(textObject, replace=true) {
 		document.querySelector('#text-options').appendChild(textOptionElement);
 	});
 	document.querySelector('#text-options').firstChild.click();
+	populateManaSetsDropdown();
 	drawTextBuffer();
 	drawNewGuidelines();
 }
@@ -1244,10 +1529,39 @@ async function drawText() {
 	textContext.clearRect(0, 0, textCanvas.width, textCanvas.height);
 	prePTContext.clearRect(0, 0, prePTCanvas.width, prePTCanvas.height);
 	drawTextBetweenFrames = false;
-	for (var textObject of Object.entries(card.text)) {
-		await writeText(textObject[1], textContext);
-		continue;
+
+	// Check if any textbox has an outline
+	const hasAnyOutlines = Object.values(card.text).some(textObj => 
+		(textObj.outlineWidth || 0) > 0
+	);
+	
+	if (!hasAnyOutlines) {
+		// Simple single-pass rendering
+		for (var textObject of Object.entries(card.text)) {
+			await writeText(textObject[1], textContext);
+			continue;
+		}
+	} else {
+		// Two-pass rendering for outlined text
+		textContext.isOutlinePass = true;
+		textContext.isFillPass = false;
+		for (var textObject of Object.entries(card.text)) {
+			await writeText(textObject[1], textContext);
+			continue;
+		}
+		
+		textContext.isOutlinePass = false;
+		textContext.isFillPass = true;
+		for (var textObject of Object.entries(card.text)) {
+			await writeText(textObject[1], textContext);
+			continue;
+		}
+		
+		// Clean up flags (only needed when we set them)
+		delete textContext.isOutlinePass;
+		delete textContext.isFillPass;
 	}
+
 	if (drawTextBetweenFrames || redrawFrames) {
 		drawFrames();
 		if (!drawTextBetweenFrames) {
@@ -1430,6 +1744,9 @@ function writeText(textObject, targetContext) {
 	var textManaCost = textObject.manaCost || false;
 	var textAllCaps = textObject.allCaps || false;
 	var textManaSpacing = scaleWidth(textObject.manaSpacing) || 0;
+	// Check for drawing mode flags on the context
+    var isOutlinePass = targetContext.isOutlinePass || false;
+    var isFillPass = targetContext.isFillPass || false;
 	//Buffers the canvases accordingly
 	var canvasMargin = 300;
 	paragraphCanvas.width = textWidth + 2 * canvasMargin;
@@ -1610,7 +1927,7 @@ function writeText(textObject, targetContext) {
 		        }
 		    }
 		}
-		var textFont = textObject.font || 'mplantin';
+		var textFont = textObject.font ? textObject.font.replaceAll('--', ' ') : 'mplantin';
 		FontLoadTracker.track(textFont);
 		var textAlign = textObject.align || 'left';
 		var textJustify = textObject.justify || 'left';
@@ -1658,14 +1975,15 @@ function writeText(textObject, targetContext) {
 		// 	lineCanvas.style.letterSpacing = '3.5px';
 		// }
 		textSize += parseInt(textObject.fontSize || '0');
-		lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
+		lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
 		lineContext.fillStyle = textColor;
 		lineContext.shadowColor = textShadowColor;
 		lineContext.shadowOffsetX = textShadowOffsetX;
 		lineContext.shadowOffsetY = textShadowOffsetY;
 		lineContext.shadowBlur = textShadowBlur;
 		lineContext.strokeStyle = textObject.outlineColor || 'black';
-		var textOutlineWidth = scaleHeight(textObject.outlineWidth) || 0;
+		// Calculate outline width proportional to current text size for proper scaling
+		var textOutlineWidth = textObject.outlineWidth ? (textObject.outlineWidth * textSize / textObject.size) : 0;
 		var textLineCap = textObject.lineCap || 'round';
 		var textLineJoin = textObject.lineJoin || 'round';
 		var hideBottomInfoBorder = card.hideBottomInfoBorder || false;
@@ -1697,7 +2015,7 @@ function writeText(textObject, targetContext) {
 					var barDistance = 0;
 					realTextAlign = textAlign;
 					textAlign = 'left';
-					if (card.version == 'cartoony') {
+					if (card.version == 'cartoony' || currentManaPrefix == 'c') {
 						barImageName = 'cflavor';
 						barWidth = scaleWidth(0.8547);
 						barHeight = scaleHeight(0.0458);
@@ -1716,25 +2034,25 @@ function writeText(textObject, targetContext) {
 						textFontExtension = '';
 						if (!textFontStyle.includes('italic')) {textFontStyle += 'italic ';}
 					}
-					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
+					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
 				} else if (possibleCode == '/i') {
 					textFontExtension = '';
 					textFontStyle = textFontStyle.replace('italic ', '');
-					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
+					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
 				} else if (possibleCode == 'bold') {
 					if (textFont == 'gillsans') {
 						textFontExtension = 'bold';
 					} else {
 						if (!textFontStyle.includes('bold')) {textFontStyle += 'bold ';}
 					}
-					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
+					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
 				} else if (possibleCode == '/bold') {
 					if (textFont == 'gillsans') {
 						textFontExtension = '';
 					} else {
 						textFontStyle = textFontStyle.replace('bold ', '');
 					}
-					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
+					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
 				} else if (possibleCode == 'left') {
 					textAlign = 'left';
 				} else if (possibleCode == 'center') {
@@ -1835,9 +2153,9 @@ function writeText(textObject, targetContext) {
 					} else {
 						textSize += parseInt(possibleCode.replace('fontsize', '')) || 0;
 					}
-					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
+					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
 				} else if (possibleCode.includes('font') || savedFont) {
-					textFont = word.replace('{font', '').replace('}', '');
+					textFont = word.replace('{font', '').replace('}', '').replaceAll('--', ' ');
 					if (savedFont) {
 						textFont = savedFont;
 						wordToWrite = word;
@@ -1845,7 +2163,7 @@ function writeText(textObject, targetContext) {
 					FontLoadTracker.track(textFont);
 					textFontExtension = '';
 					textFontStyle = '';
-					lineContext.font = textFontStyle + textSize + 'px ' + textFont + textFontExtension;
+					lineContext.font = `${textFontStyle}${textSize}px '${textFont}${textFontExtension}'`;
 					savedFont = null;
 				} else if (possibleCode.includes('outlinecolor')) {
 					lineContext.strokeStyle = possibleCode.replace('outlinecolor', '');
@@ -1954,11 +2272,21 @@ function writeText(textObject, targetContext) {
 				} else if (possibleCode.includes('kerning')) {
 					lineContext.letterSpacing = possibleCode.replace('kerning', '') + 'px';
 					lineContext.font = lineContext.font; //necessary for the letterspacing update to be recognized
-				} else if (getManaSymbol(possibleCode.replaceAll('/', '')) != undefined || getManaSymbol(possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined) {
+				} else if (
+					// Check if symbol exists with custom prefix or in default set
+					(currentManaPrefix && (getManaSymbol(currentManaPrefix + possibleCode.replaceAll('/', '')) != undefined || getManaSymbol(currentManaPrefix + possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined)) ||
+					(textObject.manaPrefix && (getManaSymbol(textObject.manaPrefix + possibleCode.replaceAll('/', '')) != undefined || getManaSymbol(textObject.manaPrefix + possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined)) ||
+					getManaSymbol(possibleCode.replaceAll('/', '')) != undefined || 
+					getManaSymbol(possibleCode.replaceAll('/', '').split('').reverse().join('')) != undefined
+				) {
 					var possibleCode = possibleCode.replaceAll('/', '');
 					var manaSymbol;
 					// Add symbol to render queue without drawing immediately
-					if (textObject.manaPrefix && 
+					// Check global prefix first, then textObject prefix, then default
+					if (currentManaPrefix && 
+						(getManaSymbol(currentManaPrefix + possibleCode) != undefined || getManaSymbol(currentManaPrefix + possibleCode.split('').reverse().join('')) != undefined)) {
+						manaSymbol = getManaSymbol(currentManaPrefix + possibleCode) || getManaSymbol(currentManaPrefix + possibleCode.split('').reverse().join(''));
+					} else if (textObject.manaPrefix && 
 						(getManaSymbol(textObject.manaPrefix + possibleCode) != undefined || getManaSymbol(textObject.manaPrefix + possibleCode.split('').reverse().join('')) != undefined)) {
 						manaSymbol = getManaSymbol(textObject.manaPrefix + possibleCode) || getManaSymbol(textObject.manaPrefix + possibleCode.split('').reverse().join(''));
 					} else {
@@ -1977,7 +2305,7 @@ function writeText(textObject, targetContext) {
 					var manaSymbolWidth = manaSymbol.width * textSize * 0.78;
 					var manaSymbolHeight = manaSymbol.height * textSize * 0.78;
 					var manaSymbolX = currentX + canvasMargin + manaSymbolSpacing;
-					var manaSymbolY = canvasMargin + textSize * 0.34 - manaSymbolHeight / 2;
+					var manaSymbolY = canvasMargin + textSize * 0.34 - manaSymbolHeight / 2 + (manaSymbol.yOffset * textSize);
 					if (textObject.manaPlacement) {
 						manaSymbolX = scaleWidth(textObject.manaPlacement.x[manaPlacementCounter] || 0) + canvasMargin;
 						manaSymbolY = canvasMargin;
@@ -2030,9 +2358,17 @@ function writeText(textObject, targetContext) {
 						shadowColor: textShadowColor,
 						shadowOffsetX: textShadowOffsetX,
 						shadowOffsetY: textShadowOffsetY,
-						shadowBlur: textShadowBlur
+						shadowBlur: textShadowBlur,
+						outlineColor: lineContext.strokeStyle
 					});
-					currentX += manaSymbolWidth + manaSymbolSpacing * 2;
+					// Calculate how much to advance currentX
+					var symbolAdvance = manaSymbolWidth + manaSymbolSpacing * 2;
+					// If symbol has custom spacing defined, use it to adjust the advance
+					if (manaSymbol.spacing !== undefined && manaSymbol.spacing < 0) {
+						// Negative spacing: reduce the advance to create overlap
+						symbolAdvance += manaSymbol.spacing * textSize;
+					}
+					currentX += symbolAdvance;
 
 					manaSymbolColor = origManaSymbolColor;
 				} else {
@@ -2055,8 +2391,16 @@ function writeText(textObject, targetContext) {
 						var imageToUse = symbolData.symbol.image;
 						var backImageToUse = symbolData.backImage;
 						
-						// For Safari, create a combined canvas first, then apply shadow
-						if (isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) {
+						// Skip if images aren't loaded yet
+						if (!imageToUse || !imageToUse.complete || imageToUse.naturalWidth === 0) {
+							return;
+						}
+						if (backImageToUse && (!backImageToUse.complete || backImageToUse.naturalWidth === 0)) {
+							return;
+						}
+						
+						// For Safari SVGs or cartoony symbols, create a combined canvas first, then apply shadow
+						if ((isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) || symbolData.symbol.image.src?.includes('cartoony/')) {
 							// Create a combined canvas for both symbols
 							var combinedCanvas = document.createElement('canvas');
 							combinedCanvas.width = symbolData.width;
@@ -2123,7 +2467,8 @@ function writeText(textObject, targetContext) {
 				// First pass: Draw outlines only
 				manaSymbolsToRender.forEach(symbolData => {
 					if (!symbolData.hasOutline) return;
-					outlineContext.fillStyle = 'black';
+					// Use the outline color from the textbox instead of hardcoded 'black'
+					outlineContext.fillStyle = symbolData.outlineColor || 'black';
 					outlineContext.beginPath();
 					var centerX = symbolData.x + symbolData.width/2;
 					var centerY = symbolData.y + symbolData.height/2;
@@ -2144,8 +2489,16 @@ function writeText(textObject, targetContext) {
 					var imageToUse = symbolData.symbol.image;
 					var backImageToUse = symbolData.backImage;
 					
-					// For Safari, create a combined canvas first, then apply shadow
-					if (isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) {
+					// Skip if images aren't loaded yet
+					if (!imageToUse || !imageToUse.complete || imageToUse.naturalWidth === 0) {
+						return;
+					}
+					if (backImageToUse && (!backImageToUse.complete || backImageToUse.naturalWidth === 0)) {
+						return;
+					}
+					
+					// For Safari SVGs or cartoony symbols, create a combined canvas first, then apply shadow
+					if ((isSafari && (symbolData.symbol.image.src?.includes('.svg') || (backImageToUse?.src?.includes('.svg')))) || symbolData.symbol.image.src?.includes('cartoony/')) {
 						// Create a combined canvas for both symbols
 						var combinedCanvas = document.createElement('canvas');
 						combinedCanvas.width = symbolData.width;
@@ -2260,19 +2613,34 @@ function writeText(textObject, targetContext) {
 					lineContext.translate(-centerX, -centerY);
 				}
 				if (textArcRadius > 0) {
-					lineContext.fillTextArc(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, textArcRadius, textArcStart, currentX, textOutlineWidth);
+					// For text WITHOUT outline, only draw on fill pass (or if no passes)
+					if (textOutlineWidth <= 0 && isOutlinePass) {
+						// Skip this text during outline pass
+					} else if (textOutlineWidth > 0 && isOutlinePass) {
+						// Draw outline only for arc text
+						lineContext.strokeTextArc(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, textArcRadius, textArcStart, currentX);
+					} else if (isFillPass || (!isOutlinePass && !isFillPass)) {
+						// Draw fill for arc text (in fill pass OR when not doing multi-pass)
+						lineContext.fillTextArc(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, textArcRadius, textArcStart, currentX, 0);
+					}
 				} else {
-					if (textOutlineWidth >= 1) {
+					// For text WITHOUT outline, only draw on fill pass (or if no passes)
+					if (textOutlineWidth <= 0 && isOutlinePass) {
+						// Skip this text during outline pass
+					} else if (textOutlineWidth > 0 && isOutlinePass) {
+						// Draw outline only
 						if (fillJustify) {
 							lineContext.strokeJustifyText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, justifyWidth, justifySettings);
 						} else {
 							lineContext.strokeText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY);
 						}
-					}
-					if (fillJustify) {
-						lineContext.fillJustifyText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, justifyWidth, justifySettings);
-					} else {
-						lineContext.fillText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY);
+					} else if (isFillPass || (!isOutlinePass && !isFillPass)) {
+						// Draw fill (in fill pass OR when not doing multi-pass)
+						if (fillJustify) {
+							lineContext.fillJustifyText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY, justifyWidth, justifySettings);
+						} else {
+							lineContext.fillText(wordToWrite, currentX + canvasMargin, canvasMargin + textSize * textFontHeightRatio + lineY);
+						}
 					}
 				}
 				if (verticalRotateChar) {
@@ -2337,10 +2705,26 @@ CanvasRenderingContext2D.prototype.fillTextArc = function(text, x, y, radius, st
 	this.rotate(startRotation + widthToAngle(distance, radius));
 	for (var i = 0; i < text.length; i++) {
 		var letter = text[i];
+		// Only draw outline if outlineWidth is specified and > 0
 		if (outlineWidth >= 1) {
 			this.strokeText(letter, 0, -radius);
+		} else {
+			// Only draw fill when outlineWidth is 0
+			this.fillText(letter, 0, -radius);
 		}
-		this.fillText(letter, 0, -radius);
+		this.rotate(widthToAngle(this.measureText(letter).width, radius));
+	}
+	this.restore();
+}
+
+// Add a stroke-only version for arc text
+CanvasRenderingContext2D.prototype.strokeTextArc = function(text, x, y, radius, startRotation, distance = 0) {
+	this.save();
+	this.translate(x - distance + scaleWidth(0.5), y + radius);
+	this.rotate(startRotation + widthToAngle(distance, radius));
+	for (var i = 0; i < text.length; i++) {
+		var letter = text[i];
+		this.strokeText(letter, 0, -radius);
 		this.rotate(widthToAngle(this.measureText(letter).width, radius));
 	}
 	this.restore();
@@ -2478,6 +2862,70 @@ async function addTextbox(textboxType) {
 	}
 }
 //ART TAB
+// Load local art dropdown
+async function loadLocalArtDropdown(path, subfolder) {	
+	const files = await filesFromFolder(path);	
+
+	const dropdown = document.querySelector('#select-local-art');
+	dropdown.innerHTML = null;	
+
+	const nullOption = document.createElement('option');	
+	dropdown.appendChild(nullOption);
+
+	if (subfolder) {
+		const upOption = document.createElement('option');
+		upOption.value = path.split('/').slice(0, -2).join('/') + '/';
+		upOption.textContent = "↑ Go up";
+		dropdown.appendChild(upOption);
+	}
+
+	files?.forEach(f => {
+		if (f !== '.gitignore') {
+			const option = document.createElement('option');
+			option.textContent = f.endsWith('/') ? '↓ ' + f : f;			
+			option.value = f.endsWith('/') ? path + f : path.replace('/local_art/', '') + f;
+			dropdown.appendChild(option);
+		}
+	});
+
+	if (subfolder) {
+		setTimeout(() => 
+		dropdown.dispatchEvent(new Event('mousedown', {target: dropdown})), 10)
+	}
+}
+
+async function filesFromFolder(path) {
+	const response = await fetch(path);
+
+	if (!response.ok) {
+		console.error('Unable to load local_art', response);
+		return;
+	}
+
+	const list = await response.text();	
+	const folders= [];
+	const files = []
+	list.matchAll(/li><a href=\".*\">(.*)<\/a>/g).map(([_, fileName]) => fileName).forEach(f => {
+		if (f.endsWith('/')) {
+			folders.push(f);
+		} else {
+			files.push(f);
+		}
+	});
+	
+	return [...folders, ...files];
+}
+
+function onLocalArtSelect(path) {
+	if (path == undefined) {
+		uploadArt(blank.src);
+	} else if (path.endsWith('/')) {
+		loadLocalArtDropdown(path, !path.endsWith('/local_art/'));
+	} else {
+		imageURL(path, uploadArt, document.querySelector("#art-update-autofit").checked ? "autoFit" : "");
+	}
+}
+
 function uploadArt(imageSource, otherParams) {
 	ImageLoadTracker.track(imageSource);
 	art.src = imageSource;
@@ -2521,7 +2969,12 @@ function artEdited() {
 	drawCard();
 }
 function autoFitArt() {
-	document.querySelector('#art-rotate').value = 0;
+	// Check if artBounds has rotation and preserve it
+	const preserveRotation = card.artBounds && card.artBounds.rotation !== undefined;
+	const rotationToPreserve = preserveRotation ? card.artBounds.rotation : 0;
+
+	if (document.querySelector("#art-preserve-position")?.checked) return;
+	document.querySelector('#art-rotate').value = rotationToPreserve;
 	if (art.width / art.height > scaleWidth(card.artBounds.width) / scaleHeight(card.artBounds.height)) {
 		document.querySelector('#art-y').value = Math.round(scaleY(card.artBounds.y) - scaleHeight(card.marginY));
 		document.querySelector('#art-zoom').value = (scaleHeight(card.artBounds.height) / art.height * 100).toFixed(1);
@@ -2692,6 +3145,7 @@ function setSymbolEdited() {
 	card.setSymbolX = document.querySelector('#setSymbol-x').value / card.width;
 	card.setSymbolY = document.querySelector('#setSymbol-y').value / card.height;
 	card.setSymbolZoom = document.querySelector('#setSymbol-zoom').value / 100;
+	card.setSymbolRotate = document.querySelector('#setSymbol-rotate').value || 0;
 	drawCard();
 }
 function resetSetSymbol() {
@@ -2700,6 +3154,7 @@ function resetSetSymbol() {
 	}
 	document.querySelector('#setSymbol-x').value = Math.round(scaleX(card.setSymbolBounds.x));
 	document.querySelector('#setSymbol-y').value = Math.round(scaleY(card.setSymbolBounds.y));
+	document.querySelector('#setSymbol-rotate').value = card.setSymbolBounds.rotation || 0;
 	var setSymbolZoom;
 	if (setSymbol.width / setSymbol.height > scaleWidth(card.setSymbolBounds.width) / scaleHeight(card.setSymbolBounds.height)) {
 		setSymbolZoom = (scaleWidth(card.setSymbolBounds.width) / setSymbol.width * 100).toFixed(1);
@@ -2953,6 +3408,9 @@ function setAutoFrame() {
 function setAutofit() {
 	localStorage.setItem('autoFit', document.querySelector('#art-update-autofit').checked);
 }
+function setPreserveArtPosition() {
+	localStorage.setItem('preserveArtPosition', document.querySelector('#art-preserve-position').checked);
+}
 function removeDefaultCollector() {
 	defaultCollector = {}; //{number: year, rarity:'P', setCode:'MTG', lang:'EN', starDot:false};
 	localStorage.removeItem('defaultCollector'); //localStorage.setItem('defaultCollector', JSON.stringify(defaultCollector));
@@ -2976,6 +3434,19 @@ function drawSetSymbol(cardContext, setSymbol, bounds) {
     const symbolHeight = setSymbol.height * card.setSymbolZoom; 
     const x = scaleX(card.setSymbolX);
     const y = scaleY(card.setSymbolY);
+	const rotation = card.setSymbolRotate || 0;
+
+	// Save context for rotation
+	cardContext.save();
+
+	// Apply rotation if needed
+	if (rotation !== 0) {
+		const centerX = x + symbolWidth / 2;
+		const centerY = y + symbolHeight / 2;
+		cardContext.translate(centerX, centerY);
+		cardContext.rotate(Math.PI / 180 * rotation);
+		cardContext.translate(-centerX, -centerY);
+	}
 
     if (bounds.outlineWidth && bounds.outlineWidth > 0) {
         // Create temp canvas for outlined symbol
@@ -3029,6 +3500,7 @@ function drawSetSymbol(cardContext, setSymbol, bounds) {
         // Draw main symbol without outline (simple path)
         cardContext.drawImage(setSymbol, x, y, symbolWidth, symbolHeight);
     }
+	cardContext.restore();
 }
 //DRAWING THE CARD (putting it all together)
 function drawCard() {
@@ -3037,12 +3509,21 @@ function drawCard() {
 	cardContext.clearRect(0, 0, cardCanvas.width, cardCanvas.height);
 	// art
 	cardContext.save();
-	cardContext.translate(scaleX(card.artX), scaleY(card.artY));
-	cardContext.rotate(Math.PI / 180 * (card.artRotate || 0));
-	if (document.querySelector('#grayscale-art').checked) {
-		cardContext.filter='grayscale(1)';
+	if (card.artRotate || (card.artBounds && card.artBounds.rotation)) {
+		// Use rotation from artRotate or artBounds.rotation
+		const rotation = card.artRotate || card.artBounds.rotation;
+		// Calculate art center
+		const artCenterX = scaleX(card.artX) + (art.width * card.artZoom) / 2;
+		const artCenterY = scaleY(card.artY) + (art.height * card.artZoom) / 2;
+		// Rotate around center
+		cardContext.translate(artCenterX, artCenterY);
+		cardContext.rotate(Math.PI / 180 * rotation);
+		cardContext.translate(-artCenterX, -artCenterY);
 	}
-	cardContext.drawImage(art, 0, 0, art.width * card.artZoom, art.height * card.artZoom);
+	if (document.querySelector('#grayscale-art').checked) {
+		cardContext.filter = 'grayscale(1)';
+	}
+	cardContext.drawImage(art, scaleX(card.artX), scaleY(card.artY), art.width * card.artZoom, art.height * card.artZoom);
 	cardContext.restore();
 	// frame elements
 	if (card.version.includes('planeswalker') && typeof planeswalkerPreFrameCanvas !== "undefined") {
@@ -3135,8 +3616,8 @@ function drawCard() {
 	// cutout the corners
 	cardContext.globalCompositeOperation = 'destination-out';
 	if (!card.noCorners && (card.marginX == 0 && card.marginY == 0)) {
-		var w = card.version == 'battle' ? 2100 : getStandardWidth();
-
+		var w = getStandardWidth();
+		
 		cardContext.drawImage(corner, 0, 0, scaleWidth(59/w), scaleWidth(59/w));
 		cardContext.rotate(Math.PI / 2);
 		cardContext.drawImage(corner, 0, -card.width, scaleWidth(59/w), scaleWidth(59/w));
@@ -3156,10 +3637,89 @@ function drawCard() {
 	}
 }
 //DOWNLOADING
-function downloadCard(alt = false, jpeg = false) {
+// Serialize card data for embedding in image trailer
+async function serializeCardData() {
+	const cardToSerialize = JSON.parse(JSON.stringify(card));
+	// Remove large image objects that are already in the image file
+	cardToSerialize.frames.forEach(frame => {
+		delete frame.image;
+		frame.masks.forEach(mask => delete mask.image);
+	});
+	
+	// Don't embed base64 images - just use a marker for user-uploaded art
+	if (cardToSerialize.artSource) {
+		if (cardToSerialize.artSource.startsWith('data:image/') || 
+		    cardToSerialize.artSource.startsWith('blob:')) {
+			cardToSerialize.artSource = 'user-uploaded';
+		} else if (cardToSerialize.artSource.includes('/img/blank.png')) {
+			delete cardToSerialize.artSource;
+		}
+	}
+	
+	return JSON.stringify(cardToSerialize);
+}
+
+// Embed card data as a trailer in the image blob
+async function embedTrailerInBlob(dataURL, cardData) {
+	return new Promise((resolve) => {
+		// Convert data URL to blob
+		fetch(dataURL).then(res => res.blob()).then(imgBlob => {
+			// Create trailer with version header
+			const trailerMarker = 'CARDCONJURER_DATA_v1:';
+			const trailerBytes = new TextEncoder().encode(trailerMarker + cardData);
+			
+			// Create new blob with image + trailer
+			const finalBlob = new Blob([imgBlob, trailerBytes], { type: imgBlob.type });
+			
+			// Convert back to data URL for download
+			const reader = new FileReader();
+			reader.onload = function(e) {
+				resolve(e.target.result);
+			};
+			reader.readAsDataURL(finalBlob);
+		});
+	});
+}
+
+// Extract trailer data from blob/file
+async function extractTrailerData(blob) {
+	return new Promise((resolve) => {
+		const reader = new FileReader();
+		reader.onload = function(e) {
+			const arrayBuffer = e.target.result;
+			const view = new Uint8Array(arrayBuffer);
+			
+			// Convert to string and search for trailer marker
+			const fullString = new TextDecoder().decode(view);
+			const markerIndex = fullString.lastIndexOf('CARDCONJURER_DATA_v1:');
+			
+			if (markerIndex !== -1) {
+				const trailerString = fullString.substring(markerIndex + 21); // 21 = length of marker
+				try {
+					const cardData = JSON.parse(trailerString);
+					resolve(cardData);
+				} catch (e) {
+					resolve(null);
+				}
+			} else {
+				resolve(null);
+			}
+		};
+		reader.readAsArrayBuffer(blob);
+	});
+}
+
+async function downloadCard(alt = false, jpeg = false) {
 	if (card.infoArtist.replace(/ /g, '') == '' && !card.artSource.includes('/img/blank.png') && !card.artZoom == 0) {
 		notify('You must credit an artist before downloading!', 5);
 	} else {
+		// Block download if no margin unless overridden
+        var shouldWarnNoMargin = localStorage.getItem('warnNoMargin') !== 'true';
+        if (shouldWarnNoMargin && card.marginX === 0 && card.marginY === 0) {
+            notify('Downloading blocked: Card has no margin. Consider using 1/8 Inch Margin in the first dropdown (this card will not work with MakePlayingCards or MPCFill). Check the box "Allow Downloading Without Margin" to disable this warning.', 5);
+            return;
+        }
+
 		// Prep file information
 		var imageDataURL;
 		var imageName = getCardName();
@@ -3170,7 +3730,11 @@ function downloadCard(alt = false, jpeg = false) {
 			imageDataURL = cardCanvas.toDataURL('image/png');
 			imageName = imageName + '.png';
 		}
-		// Download image
+
+		// Embed card data as trailer
+		imageDataURL = await embedTrailerInBlob(imageDataURL, await serializeCardData());
+		
+		// Download image with embedded trailer
 		if (alt) {
 			const newWindow = window.open('about:blank');
 			setTimeout(function(){
@@ -4321,9 +4885,39 @@ else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('Station'
 	if (card.version.includes('planeswalker')) {
 		card.text.loyalty.text = cardToImport.loyalty || '';
 		var planeswalkerAbilities = cardToImport.oracle_text.split('\n');
-		// Replace loyalty ability brackets [+1], [-2], etc. with curly brackets for each ability
+
+		// Combine lines at the beginning that don't have loyalty costs into the first ability
+		var processedAbilities = [];
+		var staticAbility = [];
+		for (var i = 0; i < planeswalkerAbilities.length; i++) {
+			var line = planeswalkerAbilities[i];
+			// Check if line has a loyalty cost pattern: [+/-/−][number/X]: or [0]:
+			// This matches things like "+1:", "−7:", "0:", "-X:", "+X:", etc. at the start of the line
+			var hasLoyaltyCost = /^[+\-−0][\dX]*\s*:/.test(line.trim()) || /^\[[+\-−0][\dX]*\]/.test(line.trim());
+			
+			if (hasLoyaltyCost) {
+				// This is a loyalty ability
+				if (staticAbility.length > 0) {
+					// Combine all static lines into first ability
+					processedAbilities.push(staticAbility.join('\n'));
+					staticAbility = [];
+				}
+				processedAbilities.push(line);
+			} else {
+				// This is a static ability or triggered ability (no loyalty cost)
+				staticAbility.push(line);
+			}
+		}
+		// If there are remaining static abilities, add them
+		if (staticAbility.length > 0) {
+			processedAbilities.push(staticAbility.join('\n'));
+		}
+		
+		planeswalkerAbilities = processedAbilities;
+		
+		// Replace loyalty ability brackets [+1], [-2], [-X], etc. with curly brackets for each ability
 		planeswalkerAbilities = planeswalkerAbilities.map(ability => {
-			return ability.replace(/\[([+\-−]\d+)\]/g, function(match, number) {
+			return ability.replace(/\[([+\-−][\dX]+)\]/g, function(match, number) {
 				return '{' + number.replace('\u2212', '-') + '}';
 			});
 		});
@@ -4333,23 +4927,33 @@ else if (cardToImport.oracle_text && cardToImport.oracle_text.includes('Station'
 		}
 		for (var i = 0; i < 4; i ++) {
 			if (planeswalkerAbilities[i]) {
-				var planeswalkerAbility = planeswalkerAbilities[i].replace(': ', 'splitstring').split('splitstring');
-				if (!planeswalkerAbility[1]) {
-					planeswalkerAbility = ['', planeswalkerAbility[0]];
+				var abilityText = planeswalkerAbilities[i];
+				var loyaltyCost = '';
+				var abilityContent = abilityText;
+				
+				// Extract loyalty cost from the beginning of the line only (supports -X, +X, numbers, etc.)
+				var loyaltyCostMatch = abilityText.match(/^([+\-−0][\dX]*)\s*:\s*/);
+				if (loyaltyCostMatch) {
+					loyaltyCost = loyaltyCostMatch[1].replace('\u2212', '-');
+					abilityContent = abilityText.substring(loyaltyCostMatch[0].length);
 				}
-				card.text['ability' + i].text = planeswalkerAbility[1].replace('(', '{i}(').replace(')', '){/i}');
+				
+				card.text['ability' + i].text = abilityContent.replace('(', '{i}(').replace(')', '){/i}');
 				if (card.version == 'planeswalkerTall' || card.version == 'planeswalkerCompleated') {
 					document.querySelector('#planeswalker-height-' + i).value = Math.round(scaleHeight(0.3572) / planeswalkerAbilities.length);
 				} else {
 					document.querySelector('#planeswalker-height-' + i).value = Math.round(scaleHeight(0.2915) / planeswalkerAbilities.length);
 				}
-				document.querySelector('#planeswalker-cost-' + i).value = planeswalkerAbility[0].replace('\u2212', '-');
+				document.querySelector('#planeswalker-cost-' + i).value = loyaltyCost;
 			} else {
 				card.text['ability' + i].text = '';
 				document.querySelector('#planeswalker-height-' + i).value = 0;
 			}
 		}
 		planeswalkerEdited();
+		if (typeof updatePlaneswalkerAbilityHeights === 'function') {
+			updatePlaneswalkerAbilityHeights();
+		}
 	} else if (card.version.includes('saga')) {
 		if (card.text.rules2) {
 			const combinedText = [cardToImport.flavor_text, ...(cardToImport.keywords || [])]
@@ -4505,6 +5109,8 @@ function saveCard(saveFromFile) {
 			delete frame.image;
 			frame.masks.forEach(mask => delete mask.image);
 		});
+		// Save custom mana selector value
+		cardToSave.customManaSet = document.querySelector('#custom-mana-selector').value || '';
 	}
 	try {
 		localStorage.setItem(cardKey, JSON.stringify(cardToSave));
@@ -4540,11 +5146,19 @@ async function loadCard(selectedCardKey) {
 		document.querySelector('#art-x').value = scaleX(card.artX) - scaleWidth(card.marginX);
 		document.querySelector('#art-y').value = scaleY(card.artY) - scaleHeight(card.marginY);
 		document.querySelector('#art-zoom').value = card.artZoom * 100;
-		document.querySelector('#art-rotate').value = card.artRotate || 0;
-		uploadArt(card.artSource);
+		document.querySelector('#art-rotate').value = card.artBounds.rotation || 0;
+		// Load art if it's a valid URL, otherwise use blank
+		if (card.artSource && card.artSource !== 'user-uploaded') {
+			uploadArt(card.artSource);
+		} else {
+			// User-uploaded art is not available, or no art specified - use blank
+			uploadArt(fixUri('/img/blank.png'));
+			card.artSource = fixUri('/img/blank.png');
+		}
 		document.querySelector('#setSymbol-x').value = scaleX(card.setSymbolX) - scaleWidth(card.marginX);
 		document.querySelector('#setSymbol-y').value = scaleY(card.setSymbolY) - scaleHeight(card.marginY);
 		document.querySelector('#setSymbol-zoom').value = card.setSymbolZoom * 100;
+		document.querySelector('#setSymbol-rotate').value = card.setSymbolRotate || 0;
 		uploadSetSymbol(card.setSymbolSource);
 		document.querySelector('#watermark-x').value = scaleX(card.watermarkX) - scaleWidth(card.marginX);
 		document.querySelector('#watermark-y').value = scaleY(card.watermarkY) - scaleHeight(card.marginY);
@@ -4559,7 +5173,27 @@ async function loadCard(selectedCardKey) {
 		document.querySelector('#serial-x').value = card.serialX;
 		document.querySelector('#serial-y').value = card.serialY;
 		document.querySelector('#serial-scale').value = card.serialScale;
+		document.querySelector('#select-local-art').value = null;
 		serialInfoEdited();
+		// Restore custom mana selector
+		if (card.customManaSet !== undefined) {
+			const selector = document.querySelector('#custom-mana-selector');
+			
+			// Check if it's a built-in set or if the custom set still exists
+			const isBuiltIn = card.customManaSet.startsWith('builtin:');
+			const isCustomAndExists = !isBuiltIn && customManaSets.has(card.customManaSet);
+			
+			if (isBuiltIn || isCustomAndExists) {
+				// Set exists, restore it
+				selector.value = card.customManaSet;
+				selectCustomManaSet(card.customManaSet);
+			} else if (card.customManaSet !== '') {
+				// Custom set no longer exists, reset to default and notify user
+				selector.value = '';
+				currentManaPrefix = '';
+				notify(`Custom mana set "${card.customManaSet}" is not available. Using default mana symbols.`, 5);
+			}
+		}
 
 		card.frames.reverse();
 		await card.frames.forEach(item => addFrame([], item));
@@ -4620,12 +5254,71 @@ async function downloadSavedCards() {
 		download.remove();
 	}
 }
-function uploadSavedCards(event) {
-	var reader = new FileReader();
-	reader.onload = function () {
-		JSON.parse(reader.result).forEach(item => saveCard(item));
+async function uploadSavedCards(event) {
+	const file = event.target.files[0];
+	if (!file) return;
+var reader = new FileReader();
+
+// Check if file is an image with embedded trailer data
+	if (file.type.startsWith('image/')) {
+		const cardData = await extractTrailerData(file);
+		if (cardData && cardData.frames) {
+			// Extract card name from the imported data
+			let cardName = 'unnamed';
+			if (cardData.text && cardData.text.title) {
+				cardName = cardData.text.title.text || 'unnamed';
+				if (cardData.text.nickname) {
+					cardName += ' (' + cardData.text.nickname.text + ')';
+				}
+				cardName = cardName.replace(/\{[^}]+\}/g, ''); // Remove formatting codes
+			}
+			
+			// Handle duplicate names automatically
+			var cardKeys = JSON.parse(localStorage.getItem('cardKeys')) || [];
+			var finalCardName = cardName;
+			if (cardKeys.includes(finalCardName)) {
+				var originalCardName = cardName;
+				var cardNameNumber = 1;
+				while (cardKeys.includes(finalCardName)) {
+					finalCardName = originalCardName + ' (' + cardNameNumber + ')';
+					cardNameNumber++;
+				}
+			}
+			
+			// Single card object
+			saveCard({key: finalCardName, data: cardData});
+			// Load the card to display it in the editor
+			await loadCard(finalCardName);
+			document.querySelector('#load-card-options').value = finalCardName;
+			notify('Card imported and loaded!', 3);
+		} else if (cardData) {
+			// Has data but wrong format
+			notify('This image contains Card Conjurer save data, but it does not appear to be in the expected format.', 5);
+		} else {
+			// No card data found
+			notify('This image does not contain Card Conjurer save data', 5);
+		}
+		return;
 	}
-	reader.readAsText(event.target.files[0]);
+	
+	// Otherwise, treat as text file (traditional .cardconjurer format)
+	reader.onload = function () {
+		try {
+			const parsedData = JSON.parse(reader.result);
+			if (Array.isArray(parsedData)) {
+				parsedData.forEach(item => saveCard(item));
+				notify('Cards imported successfully!', 3);
+			} else {
+				notify('Invalid file format. Expected an array of cards.', 5);
+			}
+		} catch (error) {
+			notify('Failed to parse file. Please ensure it is a valid Card Conjurer save file.', 5);
+		}
+	}
+	reader.onerror = function () {
+		notify('Failed to read file', 5);
+	}
+	reader.readAsText(file);
 }
 //TUTORIAL TAB
 function loadTutorialVideo() {
@@ -4710,6 +5403,9 @@ function setRoundedCorners(value) {
 	card.noCorners = !value;
 	drawCard();
 }
+function setWarnNoMargin(value) {
+    localStorage.setItem('warnNoMargin', value);
+}
 //Various loaders
 function imageURL(url, destination, otherParams) {
 	var imageurl = url;
@@ -4725,13 +5421,22 @@ function imageURL(url, destination, otherParams) {
 }
 async function imageLocal(event, destination, otherParams) {
 	var reader = new FileReader();
-	reader.onload = function () {
+	const file = event.target.files[0];
+	
+	reader.onload = async function () {
+		// Check if this is an image file with potential trailer data
+		if (file && file.type.startsWith('image/')) {
+			const cardData = await extractTrailerData(file);
+			if (cardData && confirm('This image contains Card Conjurer save data. Import it?\n\n(Cancel to just use the image)')) {
+				importCard(cardData);
+				notify('Card loaded from image!', 3);
+				return;
+			}
+		}
 		destination(reader.result, otherParams);
 	}
-	reader.onerror = function () {
-		destination('/img/blank.png', otherParams);
-	}
-	await reader.readAsDataURL(event.target.files[0]);
+	reader.onerror = () => destination('/img/blank.png', otherParams);
+	await reader.readAsDataURL(file);
 }
 function loadScript(scriptPath) {
 	return new Promise((resolve, reject) => {
@@ -4931,6 +5636,21 @@ function toggleHighRes() {
 	drawCard();
 }
 
+// When scrolling, card stays in frame
+function keepCardInView() {	
+	document.onscroll = () => {
+		if (window.innerHeight > previewCanvas.offsetHeight && window.innerWidth >= 1250) {
+			previewCanvas.style.marginTop = `${Math.max(window.scrollY - 141, 0)}px`;
+		}		
+	}
+	
+	window.onresize = () => {
+		if (window.innerWidth < 1250) {
+			previewCanvas.style.marginTop = 0;
+		}
+	}
+}
+
 // INITIALIZATION
 
 // auto load frame version (user defaults)
@@ -5004,6 +5724,12 @@ if (document.querySelector('#lockSetSymbolURL').checked) {
 	setSymbol.src = localStorage.getItem('lockSetSymbolURL');
 }
 
+// Initialize warn no margin checkbox (defaults to unchecked, meaning warnings are shown)
+if (!localStorage.getItem('warnNoMargin')) {
+    localStorage.setItem('warnNoMargin', 'false');
+}
+document.querySelector('#warn-no-margin').checked = localStorage.getItem('warnNoMargin') === 'true';
+
 //bind inputs together
 bindInputs('#frame-editor-hsl-hue', '#frame-editor-hsl-hue-slider');
 bindInputs('#frame-editor-hsl-saturation', '#frame-editor-hsl-saturation-slider');
@@ -5015,3 +5741,5 @@ loadScript('/js/frames/groupStandard-3.js');
 loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
 loadAvailableCards();
 initDraggableArt();
+loadLocalArtDropdown('/local_art/');
+keepCardInView();

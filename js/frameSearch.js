@@ -1,5 +1,5 @@
 const frameNames = new Map ([
-	//standard
+	// Standard
 	['Regular Frames', 'M15Regular-1'],
 	['Enchantment Frames (Nyx)', 'M15Nyx'],
 	['Legend Crowns', 'M15LegendCrowns'],
@@ -47,6 +47,11 @@ const frameNames = new Map ([
 	['Conspiracies (Draft Matters)', 'Conspiracy'],
 	['Colorshifted (Planar Chaos)', 'Colorshifted'],
 	['Brawl Legend Crowns', 'Brawl'],
+	// Borderless
+	['Borderless Alt (Regular)', 'Borderless'],
+	['Borderless Alt (Short)', 'BorderlessShort'],
+	['Borderless Alt (Extra Short)', 'BorderlessExtraShort'],
+	['Borderless Old (Colored Rules Box)', 'GenericShowcase'],
 	// Showcase
 	['Showcase Panel (MSH)', 'ShowcasePanel'],
 	['Pixel (TMT)', 'PixelTMT'],
@@ -114,8 +119,6 @@ const frameNames = new Map ([
 	['Eldraine Storybooks: Adventures (ELD)', 'Storybook'],
 	['Eldraine Storybooks: Adventures (WOE)', 'StorybookWOE'],
 	['Eldraine Storybooks (MOM)', 'StorybookMUL'],
-	['Borderless', 'GenericShowcase'],
-	['Borderless (Alt)', 'Borderless'],
 	['Fullart', 'M15ClearTextboxes'],
 	['Nickname ("Godzilla")', 'M15Nickname'],
 	['Extended Art (Regular)', 'M15BoxTopper'],
@@ -139,7 +142,7 @@ const frameNames = new Map ([
 	['SDCC15 (Blackout)', 'SDCC15'],
 	['Innistrad: Double Feature Planeswalkers', 'PlaneswalkerDBL'],
 	['Future Shifted', 'FutureRegular'],
-	//planeswalker
+	// Planeswalker
 	['Planeswalker', 'PlaneswalkerRegular'],
 	['Planeswalker Borderless', 'PlaneswalkerBorderless'],
 	['Planeswalker Extended Art', 'PlaneswalkerBoxTopper'],
@@ -155,13 +158,13 @@ const frameNames = new Map ([
 	['Double Feature Planeswalker Transform (Front)', 'PlaneswalkerTransformFrontDBL'],
 	['Double Feature Planeswalker Transform (Back)', 'PlaneswalkerTransformBackDBL'],
 	['Planeswalker Transform Icons', 'PlaneswalkerTransformIcons'],
-	//saga
+	// Saga
 	['Sagas', 'SagaRegular'],
 	['Sagas (Universes Beyond)', 'SagaUB'],
 	['Sagas (Scrolls of Middle-earth) (LTR)', 'SagaLTR'],
 	['Saga Creatures (Summons)', 'SagaCreature'],
 	['Saga Creatures (Universes Beyond) (Summons) (FIN)', 'SagaCreatureUB'],
-	//dfc
+	// DFC
 	['Transform (Front)', 'M15TransformFront'],
 	['Transform (Back)', 'M15TransformBack'],
 	['Transform (Back) (New)', 'M15TransformBackNew'],
@@ -186,7 +189,7 @@ const frameNames = new Map ([
 	['Transform Addon Arrows (Extended Art)', 'TransformAddonMDFCExtended'],
 	['Neon Ink Transform (Front) (TLA)', 'NeonInkTransformFront'],
 	['Neon Ink Transform (Back) (TLA)', 'NeonInkTransformBack'],
-	//modal
+	// MDFC
 	['Modal DFC', 'ModalRegular'],
 	['Modal DFC Borderless', 'ModalBorderless'],
 	['Modal DFC Extended Art', 'ModalExtended'],
@@ -198,7 +201,7 @@ const frameNames = new Map ([
 	['Modal DFC Nickname Legend Crowns', 'ModalLegendCrownsNickname'],
 	['Modal DFC Brawl Legend Crowns', 'ModalLegendCrownsBrawl'],
 	['DFC Helper Cards', 'ModalHelper'],
-	//token
+	// Tokens
 	['Regular Tokens', 'TokenRegular-1'],
 	['Textless Tokens', 'TokenTextless-1'],
 	['Borderless Textless Tokens', 'TokenTextlessBorderless'],
@@ -215,7 +218,7 @@ const frameNames = new Map ([
 	['Textless Tokens (Bordered M15)', 'TokenTextlessM15'],
 	['Original Tokens (Old Bordered)', 'TokenOld'],
 	['Unglued Tokens', 'TokenUnglued'],
-	//misc
+	// Misc
 	['Future Shifted', 'FutureRegular'],
 	['Colorshifted', '8thColorshifted'],
 	['8th Edition', '8th'],
@@ -235,16 +238,13 @@ const frameNames = new Map ([
 	['Planechase', 'Planechase'],
 	['Vanguard', 'Vanguard'],
 	['Cardback', 'Cardback'],
-	//promo
+	// Promo
 	['Promos', 'PromoOpenHouse'],
-	['Promo Borderless (Short)', 'PromoRegular-1'],
-	['Promo Borderless (Alt Short)', 'BorderlessShort'],
-	['Promo Borderless (Extra Short)', 'IkoShort'],
 	['Promo Nyx Frames', 'PromoNyx'],
 	['Promo Extended Art Frames', 'PromoExtended'],
 	['Promo Nickname Frames', 'PromoNickname'],
 	['Promo Generic Showcase', 'PromoGenericShowcase'],
-	//textless
+	// Textless
 	['Edge of Eternities Basics (EOE)', 'EOEBasics'],
 	['Kamigawa Basics (NEO)', 'NeoBasics'],
 	['Fullart Basics (2022)', 'TextlessBasics2022'],
@@ -264,7 +264,7 @@ const frameNames = new Map ([
 	['Neon Ink Textless(TLA)', 'NeonInkTextless'],
 	['Neon Ink Transform Textless (Front) (TLA)', 'NeonInkTransformFrontTextless'],
 	['Neon Ink Transform Textless (Back) (TLA)', 'NeonInkTransformBackTextless'],
-	//custom
+	// Custom
 	['Misc Custom Frames', 'MiscCustom'],
 	['Deck Covers', 'CustomDeckCover'],
 	['Simple Inventions', 'SimpleInventions'],
