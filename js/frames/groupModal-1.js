@@ -4,6 +4,7 @@ loadFramePacks([
 	{name:'Snow', value:'ModalSnow'},
 	{name:'Universes Beyond', value:'ModalUB'},
 	{name:'Borderless', value:'ModalBorderless'},
+	{name:'Borderless Alt', value:'BorderlessAltModal'},
 	{name:'Extended Art', value:'ModalExtended'},
 	{name:'Nickname', value:'ModalNickname'},
 	{name:'Short', value:'ModalShort'},

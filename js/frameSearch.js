@@ -120,7 +120,7 @@ const frameNames = new Map ([
 	['Eldraine Storybooks: Adventures (WOE)', 'StorybookWOE'],
 	['Eldraine Storybooks (MOM)', 'StorybookMUL'],
 	['Fullart', 'M15ClearTextboxes'],
-	['Nickname ("Godzilla")', 'M15Nickname'],
+	['Borderless Nickname ("Godzilla")', 'BorderlessNickname'],
 	['Extended Art (Regular)', 'M15BoxTopper'],
 	['Extended Art (Shorter Textbox)', 'M15ExtendedArtShort'],
 	['FNM Promo (Inverted Promos)', 'FNM'],
@@ -242,7 +242,6 @@ const frameNames = new Map ([
 	['Promos', 'PromoOpenHouse'],
 	['Promo Nyx Frames', 'PromoNyx'],
 	['Promo Extended Art Frames', 'PromoExtended'],
-	['Promo Nickname Frames', 'PromoNickname'],
 	['Promo Generic Showcase', 'PromoGenericShowcase'],
 	// Textless
 	['Edge of Eternities Basics (EOE)', 'EOEBasics'],
