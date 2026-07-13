@@ -1,5 +1,11 @@
 //Create objects for common properties across available frames
-var masks = [{src:'/img/frames/promo/m15PromoMaskPinline.png', name:'Pinline'}, {src:'/img/frames/m15/regular/m15MaskTitle.png', name:'Title'}, {src:'/img/frames/promo/m15PromoMaskType.png', name:'Type'}, {src:'/img/frames/promo/m15PromoMaskRules.png', name:'Rules'}, {src:'/img/frames/m15/regular/m15MaskBorder.png', name:'Border'}];
+var masks = [
+	{src:'/img/frames/promo/m15PromoMaskPinline.png', name:'Pinline'},
+	{src:'/img/frames/m15/regular/m15MaskTitle.png', name:'Title'},
+	{src:'/img/frames/promo/m15PromoMaskType.png', name:'Type'},
+	{src:'/img/frames/promo/m15PromoMaskRules.png', name:'Rules'},
+	{src:'/img/frames/m15/regular/m15MaskBorder.png', name:'Border'}
+];
 var bounds = {x:1146/1500, y:1861/2100, width:274/1500, height:140/2100};
 //defines available frames
 availableFrames = [
@@ -12,17 +18,6 @@ availableFrames = [
 	{name:'Artifact Frame', src:'/img/frames/borderlessAlt/short/a.png', masks:masks},
 	{name:'Colorless Frame', src:'/img/frames/borderlessAlt/short/c.png', masks:masks},
 	{name:'Land Frame (No Inner Glow)', src:'/img/frames/borderlessAlt/short/l.png', masks:masks},
-	
-	{name:'White Power/Toughness', src:'/img/frames/borderlessAlt/pt/w.png', bounds:bounds},
-	{name:'Blue Power/Toughness', src:'/img/frames/borderlessAlt/pt/u.png', bounds:bounds},
-	{name:'Black Power/Toughness', src:'/img/frames/borderlessAlt/pt/b.png', bounds:bounds},
-	{name:'Red Power/Toughness', src:'/img/frames/borderlessAlt/pt/r.png', bounds:bounds},
-	{name:'Green Power/Toughness', src:'/img/frames/borderlessAlt/pt/g.png', bounds:bounds},
-	{name:'Multicolored Power/Toughness', src:'/img/frames/borderlessAlt/pt/m.png', bounds:bounds},
-	{name:'Artifact Power/Toughness', src:'/img/frames/borderlessAlt/pt/a.png', bounds:bounds},
-	{name:'Colorless Power/Toughness', src:'/img/frames/borderlessAlt/pt/c.png', bounds:bounds},
-	{name:'Land Power/Toughness', src:'/img/frames/borderlessAlt/pt/l.png', bounds:bounds},
-	{name:'Vehicle Power/Toughness', src:'/img/frames/borderlessAlt/pt/v.png', bounds:bounds},
 	
 	{name:'Land Frame', src:'/img/frames/borderlessAlt/innerGlow/shortL.png', masks:masks, preserveAlpha:true},
 	{name:'Land (Typeline Colored) Frame', src:'/img/frames/borderlessAlt/innerGlow/shortL2.png', masks:masks, preserveAlpha:true},

@@ -1,5 +1,13 @@
 //Create objects for common properties across available frames
-var masks = [{src:'/img/frames/m15/transform/borderlessAlt/masks/maskPinlineFront.png', name:'Pinline'}, {src:'/img/frames/m15/transform/borderlessAlt/masks/maskTitleFront.png', name:'Title'}, {src:'/img/frames/m15/transform/borderlessAlt/masks/maskType.png', name:'Type'}, {src:'/img/frames/m15/transform/borderlessAlt/masks/maskRulesFront.png', name:'Rules'}, {src:'/img/frames/m15/transform/borderlessAlt/masks/maskTextBoxesFront.png', name:'Text Boxes'}, {src:'/img/frames/m15/transform/borderlessAlt/masks/maskNoBorderFront.png', name:'No Border'}, {src:'/img/frames/m15/transform/borderlessAlt/masks/maskBorderFront.png', name:'Border'}];
+var masks = [
+	{src:'/img/frames/m15/transform/borderlessAlt/masks/maskPinlineFront.png', name:'Pinline'},
+	{src:'/img/frames/m15/transform/borderlessAlt/masks/maskTitleFront.png', name:'Title'},
+	{src:'/img/frames/m15/transform/borderlessAlt/masks/maskType.png', name:'Type'},
+	{src:'/img/frames/m15/transform/borderlessAlt/masks/maskRulesFront.png', name:'Rules'},
+	{src:'/img/frames/m15/transform/borderlessAlt/masks/maskTextBoxesFront.png', name:'Text Boxes'},
+	{src:'/img/frames/m15/transform/borderlessAlt/masks/maskNoBorderFront.png', name:'No Border'},
+	{src:'/img/frames/m15/transform/borderlessAlt/masks/maskBorderFront.png', name:'Border'}
+];
 var bounds = {x:0.7573, y:0.8848, width:0.188, height:0.0733};
 //defines available frames
 availableFrames = [
@@ -21,7 +29,6 @@ availableFrames = [
 	{name:'Multicolored Power/Toughness', src:'/img/frames/borderlessAlt/pt/m.png', bounds:bounds},
 	{name:'Artifact Power/Toughness', src:'/img/frames/borderlessAlt/pt/a.png', bounds:bounds},
 	{name:'Colorless Power/Toughness', src:'/img/frames/borderlessAlt/pt/c.png', bounds:bounds},
-	{name:'Land Power/Toughness', src:'/img/frames/borderlessAlt/pt/l.png', bounds:bounds},
 	{name:'Vehicle Power/Toughness', src:'/img/frames/borderlessAlt/pt/v.png', bounds:bounds}
 ];
 //disables/enables the "Load Frame Version" button

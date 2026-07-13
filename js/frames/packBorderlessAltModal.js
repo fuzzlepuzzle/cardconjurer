@@ -20,18 +20,7 @@ availableFrames = [
 	{name:'Colorless Frame (Front)', src:'/img/frames/borderlessAlt/mdfc/cf.png', masks:masks},
 	{name:'Colorless Frame (Back)', src:'/img/frames/borderlessAlt/mdfc/cb.png', masks:masks},
 	{name:'Land Frame (Front, No Inner Glow)', src:'/img/frames/borderlessAlt/mdfc/lf.png', masks:masks},
-	{name:'Land Frame (Back, No Inner Glow)', src:'/img/frames/borderlessAlt/mdfc/lb.png', masks:masks},
-	
-	{name:'White Power/Toughness', src:'/img/frames/borderlessAlt/pt/w.png', bounds:bounds},
-	{name:'Blue Power/Toughness', src:'/img/frames/borderlessAlt/pt/u.png', bounds:bounds},
-	{name:'Black Power/Toughness', src:'/img/frames/borderlessAlt/pt/b.png', bounds:bounds},
-	{name:'Red Power/Toughness', src:'/img/frames/borderlessAlt/pt/r.png', bounds:bounds},
-	{name:'Green Power/Toughness', src:'/img/frames/borderlessAlt/pt/g.png', bounds:bounds},
-	{name:'Multicolored Power/Toughness', src:'/img/frames/borderlessAlt/pt/m.png', bounds:bounds},
-	{name:'Artifact Power/Toughness', src:'/img/frames/borderlessAlt/pt/a.png', bounds:bounds},
-	{name:'Colorless Power/Toughness', src:'/img/frames/borderlessAlt/pt/c.png', bounds:bounds},
-	{name:'Land Power/Toughness', src:'/img/frames/borderlessAlt/pt/l.png', bounds:bounds},
-	{name:'Vehicle Power/Toughness', src:'/img/frames/borderlessAlt/pt/v.png', bounds:bounds}
+	{name:'Land Frame (Back, No Inner Glow)', src:'/img/frames/borderlessAlt/mdfc/lb.png', masks:masks}
 ];
 //disables/enables the "Load Frame Version" button
 document.querySelector('#loadFrameVersion').disabled = false;

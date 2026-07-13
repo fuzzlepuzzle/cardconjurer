@@ -8,9 +8,8 @@ loadFramePacks([
 	{name:'DFCs (Back)', value:'BorderlessAltBack'},
 	{name:'MDFCs', value:'BorderlessAltModal'},
 
-
 	{name:'Legend Crowns & Title Bars', value:'disabled'},
-	{name:'Floating Legend Crowns', value:'M15LegendCrownsFloating'},
+	{name:'Legend Crowns', value:'BorderlessAltCrowns'},
 	{name:'Floating Legend Crowns (Universes Beyond)', value:'UBLegendCrownsFloating'},
 	{name:'Borderless Nickname Titles ("Godzilla")', value:'BorderlessNickname'},
 	{name:'Smooth Nickname Legend Crowns', value:'M15SmoothNickname'},
@@ -19,9 +18,10 @@ loadFramePacks([
 	{name:'Inner Crowns (Etched)', value:'InnerCrownsEtched'},
 
 	{name:'Addons', value:'disabled'},
+	{name:'Margin', value:'MarginBorderlessAlt'},
+	{name:'Power/Toughness Box', value:'BorderlessAltPT'},
 	{name:'Borderless Nickname ("Godzilla")', value:'BorderlessNickname'},
 	{name:'Holo Stamps', value:'M15HoloStamps'},
-	{name:'Dark Power/Toughness', value:'M15DarkPT'},
 	{name:'Color Identity Pips', value:'M15CIPips'},
 	{name:'"The List" Stamp', value:'TheList'},
 	

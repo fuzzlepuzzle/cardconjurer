@@ -1,6 +1,13 @@
+//This is Borderless Alt.
 //Create objects for common properties across available frames
-var masks = [{src:'/img/frames/m15/genericShowcase/m15GenericShowcaseMaskPinline.png', name:'Pinline'}, {src:'/img/frames/m15/regular/m15MaskTitle.png', name:'Title'}, {src:'/img/frames/m15/regular/m15MaskType.png', name:'Type'}, {src:'/img/frames/m15/regular/m15MaskTitleAndType.png', name:'Title and Type'}, {src:'/img/frames/m15/regular/m15MaskRules.png', name:'Rules'}, {src:'/img/frames/m15/borderless/masks/maskNoBorder.png', name:'No Border'}, {src:'/img/frames/m15/regular/m15MaskBorder.png', name:'Border'}];
-var bounds = {x:1146/1500, y:1861/2100, width:274/1500, height:140/2100};
+var masks = [
+	{src:'/img/frames/borderlessAlt/regular/masks/maskPinlines.png', name:'Pinlines'},
+	{src:'/img/frames/borderlessAlt/maskTitle.png', name:'Title'},
+	{src:'/img/frames/borderlessAlt/regular/masks/maskType.png', name:'Type'},
+	{src:'/img/frames/borderlessAlt/regular/masks/maskTitleAndType.png', name:'Title and Type'},
+	{src:'/img/frames/borderlessAlt/regular/masks/maskRules.png', name:'Rules'},
+	{src:'/img/frames/borderlessAlt/regular/masks/maskNoBorder.png', name:'No Border'},
+];
 //defines available frames
 availableFrames = [
 	{name:'White Frame', src:'/img/frames/borderlessAlt/regular/w.png', masks:masks},
@@ -9,38 +16,30 @@ availableFrames = [
 	{name:'Red Frame', src:'/img/frames/borderlessAlt/regular/r.png', masks:masks},
 	{name:'Green Frame', src:'/img/frames/borderlessAlt/regular/g.png', masks:masks},
 	{name:'Multicolored Frame', src:'/img/frames/borderlessAlt/regular/m.png', masks:masks},
-	{name:'Artifact Frame', src:'/img/frames/borderlessAlt/a.png', masks:masks},
-	{name:'Colorless Frame', src:'/img/frames/borderlessAlt/c.png', masks:masks},
-	{name:'Land Frame (No Inner Glow)', src:'/img/frames/borderlessAlt/l.png', masks:masks},
-
-	{name:'White Power/Toughness', src:'/img/frames/borderlessAlt/pt/w.png', bounds:bounds},
-	{name:'Blue Power/Toughness', src:'/img/frames/borderlessAlt/pt/u.png', bounds:bounds},
-	{name:'Black Power/Toughness', src:'/img/frames/borderlessAlt/pt/b.png', bounds:bounds},
-	{name:'Red Power/Toughness', src:'/img/frames/borderlessAlt/pt/r.png', bounds:bounds},
-	{name:'Green Power/Toughness', src:'/img/frames/borderlessAlt/pt/g.png', bounds:bounds},
-	{name:'Multicolored Power/Toughness', src:'/img/frames/borderlessAlt/pt/m.png', bounds:bounds},
-	{name:'Artifact Power/Toughness', src:'/img/frames/borderlessAlt/pt/a.png', bounds:bounds},
-	{name:'Colorless Power/Toughness', src:'/img/frames/borderlessAlt/pt/c.png', bounds:bounds},
-	{name:'Land Power/Toughness', src:'/img/frames/borderlessAlt/pt/l.png', bounds:bounds},
-	{name:'Vehicle Power/Toughness', src:'/img/frames/borderlessAlt/pt/v.png', bounds:bounds},
+	{name:'Artifact Frame', src:'/img/frames/borderlessAlt/regular/a.png', masks:masks},
+	{name:'Colorless Frame', src:'/img/frames/borderlessAlt/regular/c.png', masks:masks},
+	{name:'Land Frame (No Inner Glow)', src:'/img/frames/borderlessAlt/regular/l.png', masks:masks},
 	
-	{name:'Land Frame', src:'/img/frames/borderlessAlt/innerGlow/L.png', masks:masks, preserveAlpha:true},
-	{name:'Land (Typeline Colored) Frame', src:'/img/frames/borderlessAlt/innerGlow/L2.png', masks:masks, preserveAlpha:true},
-	{name:'White Land Frame', src:'/img/frames/borderlessAlt/innerGlow/w.png', masks:masks, preserveAlpha:true},
-	{name:'Blue Land Frame', src:'/img/frames/borderlessAlt/innerGlow/u.png', masks:masks, preserveAlpha:true},
-	{name:'Black Land Frame', src:'/img/frames/borderlessAlt/innerGlow/b.png', masks:masks, preserveAlpha:true},
-	{name:'Red Land Frame', src:'/img/frames/borderlessAlt/innerGlow/r.png', masks:masks, preserveAlpha:true},
-	{name:'Green Land Frame', src:'/img/frames/borderlessAlt/innerGlow/g.png', masks:masks, preserveAlpha:true},
-	{name:'Multicolored Land Frame', src:'/img/frames/borderlessAlt/innerGlow/m.png', masks:masks, preserveAlpha:true},
-	{name:'Artifact Land Frame', src:'/img/frames/borderlessAlt/innerGlow/a.png', masks:masks, preserveAlpha:true},
-	{name:'Colorless Land Frame', src:'/img/frames/borderlessAlt/innerGlow/c.png', masks:masks, preserveAlpha:true}
+	{name:'Land Frame', src:'/img/frames/borderlessAlt/land/regular/l.png', masks:masks},
+	{name:'Land (Typeline Colored) Frame', src:'/img/frames/borderlessAlt/land/regular/l2.png', masks:masks},
+	{name:'White Land Frame', src:'/img/frames/borderlessAlt/land/regular/w.png', masks:masks},
+	{name:'Blue Land Frame', src:'/img/frames/borderlessAlt/land/regular/u.png', masks:masks},
+	{name:'Black Land Frame', src:'/img/frames/borderlessAlt/land/regular/b.png', masks:masks},
+	{name:'Red Land Frame', src:'/img/frames/borderlessAlt/land/regular/r.png', masks:masks},
+	{name:'Green Land Frame', src:'/img/frames/borderlessAlt/land/regular/g.png', masks:masks},
+	{name:'Multicolored Land Frame', src:'/img/frames/borderlessAlt/land/regular/m.png', masks:masks},
+	{name:'Artifact Land Frame', src:'/img/frames/borderlessAlt/land/regular/a.png', masks:masks},
+	{name:'Colorless Land Frame', src:'/img/frames/borderlessAlt/land/regular/c.png', masks:masks}
 ];
 //disables/enables the "Load Frame Version" button
 document.querySelector('#loadFrameVersion').disabled = false;
 //defines process for loading this version, if applicable
 document.querySelector('#loadFrameVersion').onclick = async function() {
-	//resets things so that every frame doesn't have to
-	await resetCardIrregularities();
+	//resets things so that every frame doesn't have to, overrides canvas size cuz it's an HD frame
+	var previousCardHeight = card.height
+	await resetCardIrregularities({canvas:[3000, 4200, 0, 0]});
+	//hopefully makes CC think it's a margin and act accordingly?
+	card.margins = true;
 	//sets card version
 	card.version = 'borderless';
 	//art bounds
