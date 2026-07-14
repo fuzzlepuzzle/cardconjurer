@@ -38,7 +38,7 @@ loadFramePacks([
 	{name:'Ravnica City (MOM)', value:'Ravnica'},
 	{name:'Oil Slick (ONE)', value:'OilSlick'},
 	{name:'Shattered Glass (BOT)', value:'ShatteredGlass'},
-	{name:'Stained Glass (DMU)', value:'DMUStainedGlass'},
+	{name:'Stained Glass (DMU)', value:'StainedGlass'},
 	{name:'Golden Age (SNC)', value:'SNCGilded'},
 	{name:'Art Deco (SNC)', value:'SNCArtDeco'},
 	{name:'Skyscraper (SNC)', value:'SNCSkyscraper'},

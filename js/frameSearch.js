@@ -91,7 +91,7 @@ const frameNames = new Map ([
 	['Tarkir Sketch (MOM)', 'Tarkir'],
 	['Oil Slick (ONE)', 'OilSlick'],
 	['Shattered Glass (BOT)', 'ShatteredGlass'],
-	['Stained Glass (DMU)', 'DMUStainedGlass'],
+	['Stained Glass (DMU)', 'StainedGlass'],
 	['Golden Age (SNC)', 'SNCGilded'],
 	['Art Deco (SNC)', 'SNCArtDeco'],
 	['Skyscraper (SNC)', 'SNCSkyscraper'],
