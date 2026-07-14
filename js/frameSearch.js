@@ -48,9 +48,10 @@ const frameNames = new Map ([
 	['Colorshifted (Planar Chaos)', 'Colorshifted'],
 	['Brawl Legend Crowns', 'Brawl'],
 	// Borderless
-	['Borderless Alt (Regular)', 'Borderless'],
-	['Borderless Alt (Short)', 'BorderlessShort'],
-	['Borderless Alt (Extra Short)', 'BorderlessExtraShort'],
+	['Borderless Alt (Regular)', 'BorderlessAlt'],
+	['Borderless Alt (Short)', 'BorderlessAltShorter'],
+	['Borderless Alt (Shorter)', 'BorderlessAltShorter'],
+	['Borderless Alt (Shortest)', 'BorderlessAltShortest'],
 	['Borderless Old (Colored Rules Box)', 'GenericShowcase'],
 	// Showcase
 	['Showcase Panel (MSH)', 'ShowcasePanel'],

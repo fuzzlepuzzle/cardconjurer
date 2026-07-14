@@ -1,9 +1,10 @@
 loadFramePacks([
 
 	{name:'Borderless Alt (Modern, Post-2023)', value:'disabled'},
-	{name:'Borderless Alt (Regular)', value:'Borderless'},
-	{name:'Borderless Alt (Short)', value:'BorderlessShort'},
-	{name:'Borderless Alt (Extra Short)', value:'BorderlessExtraShort'},
+	{name:'Borderless Alt (Regular)', value:'BorderlessAlt'},
+	{name:'Borderless Alt (Short)', value:'BorderlessAltShort'},
+	{name:'Borderless Alt (Shorter)', value:'BorderlessAltShorter'},
+	{name:'Borderless Alt (Shortest)', value:'BorderlessAltShortest'},
 	{name:'DFCs (Front)', value:'BorderlessAltFront'},
 	{name:'DFCs (Back)', value:'BorderlessAltBack'},
 	{name:'MDFCs', value:'BorderlessAltModal'},
