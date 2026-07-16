@@ -30,7 +30,9 @@ document.querySelector('#loadFrameVersion').disabled = false;
 //defines process for loading this version, if applicable
 document.querySelector('#loadFrameVersion').onclick = async function() {
 	//resets things so that every frame doesn't have to
-	await resetCardIrregularities();
+	// also overrides canvas size cuz it's an HD frame
+	var previousCardHeight = card.height
+	await resetCardIrregularities({canvas:[3000, 4200, 0, 0]});
 	//sets card version
 	card.version = 'stainedGlass';
 	//art bounds
