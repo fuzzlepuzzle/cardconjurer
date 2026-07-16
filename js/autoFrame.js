@@ -163,8 +163,8 @@ function getFrameTypeConfig(frameType) {
 		},
 		
 		// Borderless (Alt) frame
-		'Borderless': {
-			group: 'Showcase-5',
+		'BorderlessAlt': {
+			group: 'Borderless',
 			makeFrameFunction: makeBorderlessFrameByLetter,
 			supportsCrown: true,
 			supportsPT: true,
@@ -468,7 +468,7 @@ function getFrameLetterConfig(frameType) {
 				return letter;
 			}
 		},
-		'Borderless': {
+		'BorderlessAlt': {
 			frameNames: standardFrameNames,
 			basePath: '/img/frames/',
 			bounds: {
