@@ -1577,6 +1577,7 @@ function autoFrameBuffer() {
 	autoFrameTimer = setTimeout(autoFrame, 500);
 }
 async function drawText() {
+	window.actualManaLeftEdge = undefined;
 	textContext.clearRect(0, 0, textCanvas.width, textCanvas.height);
 	prePTContext.clearRect(0, 0, prePTCanvas.width, prePTCanvas.height);
 	drawTextBetweenFrames = false;
@@ -1798,6 +1799,40 @@ function writeText(textObject, targetContext) {
 	// Check for drawing mode flags on the context
     var isOutlinePass = targetContext.isOutlinePass || false;
     var isFillPass = targetContext.isFillPass || false;
+	if (document.querySelector('#auto-avoid-text-overlap') && document.querySelector('#auto-avoid-text-overlap').checked) {
+		if (textObject.name == 'Title' && card.text.mana && card.text.mana.text) {
+			var manaText = card.text.mana.text;
+			var symbolCount = 0;
+			var inBrackets = false;
+			for (var i = 0; i < manaText.length; i++) {
+				if (manaText[i] == '{') { inBrackets = true; symbolCount++; }
+				else if (manaText[i] == '}') { inBrackets = false; }
+				else if (!inBrackets && manaText[i].trim() != '') { symbolCount++; }
+			}
+			var manaLeftEdge = window.actualManaLeftEdge;
+			if (manaLeftEdge === undefined) {
+				var mX = scaleX(card.text.mana.x) || 0;
+				var mW = scaleWidth(card.text.mana.width) || scaleWidth(1);
+				var mRightEdge = mX + mW;
+				var mSize = scaleHeight(card.text.mana.size) || scaleHeight(0.038);
+				var mSpacing = scaleWidth(card.text.mana.manaSpacing) || 0;
+				var renderedWidth = symbolCount * (mSize * 0.86 + 2 * mSpacing);
+				manaLeftEdge = (!card.text.mana.align || card.text.mana.align == 'right') ? (mRightEdge - renderedWidth) : mX;
+			}
+			if (textX + textWidth > manaLeftEdge) {
+				textWidth = Math.max(0, manaLeftEdge - textX - scaleWidth(0.005));
+			}
+		}
+		if (textObject.name == 'Type' && card.setSymbolBounds && card.setSymbolBounds.width > 0) {
+			var setSymbolLeftEdge = scaleX(card.setSymbolX);
+			if (card.setSymbolBounds.outlineWidth) {
+				setSymbolLeftEdge -= scaleHeight(card.setSymbolBounds.outlineWidth);
+			}
+			if (textX + textWidth > setSymbolLeftEdge) {
+				textWidth = Math.max(0, setSymbolLeftEdge - textX - scaleWidth(0.005));
+			}
+		}
+	}
 	//Buffers the canvases accordingly
 	var canvasMargin = 300;
 	paragraphCanvas.width = textWidth + 2 * canvasMargin;
@@ -2744,6 +2779,10 @@ function writeText(textObject, targetContext) {
 				} else {
 					trueTargetContext.drawImage(paragraphCanvas, textX - canvasMargin + ptShift[0] + permaShift[0] + finalHorizontalAdjust, textY - canvasMargin + verticalAdjust + ptShift[1] + permaShift[1]);
 				}
+				if (textObject.name == 'Mana Cost') {
+					var baseAdjust = (textAlign == 'right') ? (textWidth - widestLineWidth) : ((textAlign == 'center') ? (textWidth - widestLineWidth) / 2 : 0);
+					window.actualManaLeftEdge = textX + finalHorizontalAdjust + baseAdjust;
+				}
 				drawingText = false;
 			}
 		}
@@ -3198,6 +3237,9 @@ function setSymbolEdited() {
 	card.setSymbolZoom = document.querySelector('#setSymbol-zoom').value / 100;
 	card.setSymbolRotate = document.querySelector('#setSymbol-rotate').value || 0;
 	drawCard();
+	if (document.querySelector('#auto-avoid-text-overlap') && document.querySelector('#auto-avoid-text-overlap').checked) {
+		drawTextBuffer();
+	}
 }
 function resetSetSymbol() {
 	if (card.setSymbolBounds == undefined) {
